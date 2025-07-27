@@ -1,0 +1,56 @@
+{
+  "name": "ai-platform",
+  "version": "1.0.0",
+  "description": "AI Platform with MCP Integration",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend",
+    "mcp-manager"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:backend": "cd backend && npm run dev",
+    "build": "npm run build:backend && npm run build:frontend",
+    "build:frontend": "cd frontend && npm run build",
+    "build:backend": "cd backend && npm run build",
+    "start": "cd backend && npm start",
+    "test": "npm run test:frontend && npm run test:backend",
+    "test:frontend": "cd frontend && npm test",
+    "test:backend": "cd backend && npm test",
+    "lint": "npm run lint:frontend && npm run lint:backend",
+    "lint:frontend": "cd frontend && npm run lint",
+    "lint:backend": "cd backend && npm run lint",
+    "install:all": "npm install && npm run install:frontend && npm run install:backend && npm run install:mcp",
+    "install:frontend": "cd frontend && npm install",
+    "install:backend": "cd backend && npm install",
+    "install:mcp": "cd mcp-manager && npm install",
+    "db:migrate": "cd backend && npx prisma migrate dev",
+    "db:seed": "cd backend && npx prisma db seed",
+    "db:studio": "cd backend && npx prisma studio",
+    "clean": "rimraf frontend/dist frontend/.next backend/dist node_modules",
+    "reset": "npm run clean && npm run install:all"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "rimraf": "^5.0.5"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yourusername/ai-platform.git"
+  },
+  "keywords": [
+    "ai",
+    "mcp",
+    "claude",
+    "chat",
+    "platform"
+  ],
+  "author": "Your Name",
+  "license": "UNLICENSED"
+}
