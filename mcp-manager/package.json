@@ -1,0 +1,44 @@
+{
+  "name": "ai-platform-mcp-manager",
+  "version": "1.0.0",
+  "description": "MCP server management layer for AI Platform",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "nodemon src/index.js",
+    "start": "node dist/index.js",
+    "build": "babel src -d dist",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "node-fetch": "^3.3.2",
+    "uuid": "^9.0.1",
+    "joi": "^17.11.0",
+    "eventemitter3": "^5.0.1",
+    "ws": "^8.14.2"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.23.4",
+    "@babel/core": "^7.23.5",
+    "@babel/preset-env": "^7.23.5",
+    "eslint": "^8.54.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-plugin-import": "^2.29.0",
+    "jest": "^29.7.0",
+    "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "ai",
+    "server-management"
+  ],
+  "author": "Your Name",
+  "license": "UNLICENSED"
+}
