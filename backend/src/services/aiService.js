@@ -1,6 +1,5 @@
 const Anthropic = require('@anthropic-ai/sdk');
 const OpenAI = require('openai');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
 const logger = require('../utils/logger');
 const { AppError } = require('../middleware/errorHandler');
 
@@ -13,8 +12,7 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-const genAI = process.env.GOOGLE_AI_API_KEY ? 
-  new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY) : null;
+// Google AI will be added later
 
 // Model configurations
 const modelConfigs = {
@@ -46,13 +44,6 @@ const modelConfigs = {
     costPerToken: 0.0000005, // $0.5 per 1M tokens
     contextWindow: 16384
   },
-  'gemini-pro': {
-    provider: 'google',
-    model: 'gemini-pro',
-    maxTokens: 4096,
-    costPerToken: 0.000001, // $1 per 1M tokens (estimated)
-    contextWindow: 32768
-  }
 };
 
 // Calculate credits needed for a request
@@ -91,11 +82,6 @@ const formatMessages = (messages, provider) => {
         content: msg.content
       }));
     
-    case 'google':
-      return messages.map(msg => ({
-        role: msg.role === 'assistant' ? 'model' : 'user',
-        parts: [{ text: msg.content }]
-      }));
     
     default:
       return messages;
@@ -135,9 +121,6 @@ const generateChatCompletion = async (model, messages, options = {}) => {
         response = await generateOpenAICompletion(config, formattedMessages, options);
         break;
       
-      case 'google':
-        response = await generateGoogleCompletion(config, formattedMessages, options);
-        break;
       
       default:
         throw new AppError(`Provider ${config.provider} not implemented`, 500);
@@ -256,37 +239,6 @@ const generateOpenAICompletion = async (config, messages, options) => {
   };
 };
 
-// Google Gemini completion
-const generateGoogleCompletion = async (config, messages, options) => {
-  if (!genAI) {
-    throw new AppError('Google AI not configured', 500);
-  }
-
-  const model = genAI.getGenerativeModel({ model: config.model });
-  
-  // Convert messages to Gemini format
-  const chat = model.startChat({
-    history: messages.slice(0, -1), // All but last message
-    generationConfig: {
-      temperature: options.temperature || 0.7,
-      topP: options.topP || 0.9,
-      topK: options.topK || 40,
-      maxOutputTokens: options.maxTokens || config.maxTokens,
-    },
-  });
-
-  const lastMessage = messages[messages.length - 1];
-  const result = await chat.sendMessage(lastMessage.parts[0].text);
-  const response = await result.response;
-  
-  return {
-    content: response.text(),
-    metadata: {
-      candidates: response.candidates,
-      promptFeedback: response.promptFeedback
-    }
-  };
-};
 
 // Stream chat completion
 const streamChatCompletion = async function* (model, messages, options = {}) {
@@ -425,11 +377,6 @@ const validateModel = (model) => {
       }
       break;
     
-    case 'google':
-      if (!process.env.GOOGLE_AI_API_KEY) {
-        throw new AppError('Google AI API not configured', 500);
-      }
-      break;
   }
 
   return config;

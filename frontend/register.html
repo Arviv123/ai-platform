@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>הרשמה - AI Platform</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            direction: rtl;
+            padding: 20px 0;
+        }
+        
+        .register-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            overflow: hidden;
+            width: 100%;
+            max-width: 1000px;
+            display: flex;
+            min-height: 600px;
+        }
+        
+        .register-form-section {
+            flex: 1.2;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .register-brand {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .register-brand h1 {
+            font-size: 2.2em;
+            margin-bottom: 8px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .register-brand p {
+            color: #666;
+            font-size: 1em;
+        }
+        
+        .register-form {
+            max-width: 450px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            color: #333;
+            font-size: 0.9em;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            font-size: 0.95em;
+            transition: all 0.3s;
+            background: #f8f9fa;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .password-strength {
+            margin-top: 8px;
+            font-size: 0.8em;
+        }
+        
+        .strength-bar {
+            height: 4px;
+            background: #e9ecef;
+            border-radius: 2px;
+            margin: 5px 0;
+            overflow: hidden;
+        }
+        
+        .strength-fill {
+            height: 100%;
+            width: 0%;
+            transition: all 0.3s;
+            border-radius: 2px;
+        }
+        
+        .strength-weak { background: #ff6b6b; width: 25%; }
+        .strength-fair { background: #ffa502; width: 50%; }
+        .strength-good { background: #26d065; width: 75%; }
+        .strength-strong { background: #2ed573; width: 100%; }
+        
+        .subscription-plans {
+            margin: 20px 0;
+        }
+        
+        .plans-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .plan-option {
+            padding: 15px 10px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: white;
+        }
+        
+        .plan-option:hover,
+        .plan-option.selected {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+        
+        .plan-option.selected {
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .plan-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+        }
+        
+        .plan-price {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 3px;
+        }
+        
+        .plan-credits {
+            font-size: 0.8em;
+            color: #666;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        .checkbox-group input[type="checkbox"] {
+            margin-top: 3px;
+        }
+        
+        .checkbox-group label {
+            font-size: 0.9em;
+            line-height: 1.4;
+            margin: 0;
+            cursor: pointer;
+        }
+        
+        .checkbox-group a {
+            color: #667eea;
+            text-decoration: none;
+        }
+        
+        .checkbox-group a:hover {
+            text-decoration: underline;
+        }
+        
+        .register-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+        
+        .register-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+        
+        .register-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .login-link {
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        .login-link a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        .login-link a:hover {
+            text-decoration: underline;
+        }
+        
+        .register-visual {
+            flex: 1;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            color: white;
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .visual-icon {
+            font-size: 4em;
+            margin-bottom: 25px;
+            opacity: 0.9;
+        }
+        
+        .visual-content h2 {
+            font-size: 1.8em;
+            margin-bottom: 15px;
+        }
+        
+        .visual-content p {
+            font-size: 1em;
+            opacity: 0.9;
+            line-height: 1.6;
+            margin-bottom: 25px;
+        }
+        
+        .benefits-list {
+            text-align: right;
+            max-width: 300px;
+        }
+        
+        .benefits-list li {
+            list-style: none;
+            margin-bottom: 12px;
+            padding-right: 25px;
+            position: relative;
+            font-size: 0.95em;
+        }
+        
+        .benefits-list li::before {
+            content: '🚀';
+            position: absolute;
+            right: 0;
+            font-size: 1em;
+        }
+        
+        .alert {
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+        }
+        
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        @media (max-width: 768px) {
+            .register-container {
+                flex-direction: column;
+                margin: 10px;
+            }
+            
+            .register-visual {
+                order: -1;
+                min-height: 200px;
+                padding: 30px 20px;
+            }
+            
+            .register-form-section {
+                padding: 30px 20px;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .plans-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .plans-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="register-container">
+        <!-- Registration Form Section -->
+        <div class="register-form-section">
+            <div class="register-brand">
+                <h1>🤖 AI Platform</h1>
+                <p>הצטרף לפלטפורמת הבינה המלאכותית המתקדמת</p>
+            </div>
+            
+            <form class="register-form" id="registerForm">
+                <div id="alertContainer"></div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="firstName">שם פרטי</label>
+                        <input type="text" id="firstName" class="form-control" placeholder="הזן שם פרטי" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="lastName">שם משפחה</label>
+                        <input type="text" id="lastName" class="form-control" placeholder="הזן שם משפחה" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="email">דוא"ל</label>
+                    <input type="email" id="email" class="form-control" placeholder="הזן את הדוא״ל שלך" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">סיסמה</label>
+                    <input type="password" id="password" class="form-control" placeholder="בחר סיסמה חזקה" required>
+                    <div class="password-strength">
+                        <div class="strength-bar">
+                            <div class="strength-fill" id="strengthFill"></div>
+                        </div>
+                        <span id="strengthText">חוזק הסיסמה</span>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="confirmPassword">אישור סיסמה</label>
+                    <input type="password" id="confirmPassword" class="form-control" placeholder="הזן את הסיסמה שוב" required>
+                </div>
+                
+                <div class="subscription-plans">
+                    <label>בחר תוכנית מנוי:</label>
+                    <div class="plans-grid">
+                        <div class="plan-option selected" data-plan="free">
+                            <div class="plan-name">חינם</div>
+                            <div class="plan-price">₪0</div>
+                            <div class="plan-credits">100 קרדיטים</div>
+                        </div>
+                        <div class="plan-option" data-plan="basic">
+                            <div class="plan-name">בסיסי</div>
+                            <div class="plan-price">₪29</div>
+                            <div class="plan-credits">1,000 קרדיטים</div>
+                        </div>
+                        <div class="plan-option" data-plan="premium">
+                            <div class="plan-name">פרימיום</div>
+                            <div class="plan-price">₪99</div>
+                            <div class="plan-credits">5,000 קרדיטים</div>
+                        </div>
+                        <div class="plan-option" data-plan="enterprise">
+                            <div class="plan-name">ארגוני</div>
+                            <div class="plan-price">₪299</div>
+                            <div class="plan-credits">20,000 קרדיטים</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="checkbox-group">
+                    <input type="checkbox" id="agreeTerms" required>
+                    <label for="agreeTerms">
+                        אני מסכים/ה ל<a href="#" target="_blank">תנאי השימוש</a> 
+                        ול<a href="#" target="_blank">מדיניות הפרטיות</a>
+                    </label>
+                </div>
+                
+                <div class="checkbox-group">
+                    <input type="checkbox" id="agreeMarketing">
+                    <label for="agreeMarketing">
+                        אני מעוניין/ת לקבל עדכונים ומבצעים בדוא״ל
+                    </label>
+                </div>
+                
+                <button type="submit" class="register-btn" id="registerBtn">
+                    <i class="fas fa-user-plus"></i> הירשם עכשיו
+                </button>
+                
+                <div class="login-link">
+                    <span>כבר יש לך חשבון? </span>
+                    <a href="login.html">התחבר כאן</a>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Visual Section -->
+        <div class="register-visual">
+            <div class="visual-icon">🎯</div>
+            <div class="visual-content">
+                <h2>הצטרף אלינו היום!</h2>
+                <p>קבל גישה מיידית לכל מודלי הבינה המלאכותית המתקדמים ותחל לחוות את העתיד של הטכנולוגיה</p>
+                
+                <ul class="benefits-list">
+                    <li>גישה למודלי AI מתקדמים</li>
+                    <li>ממשק משתמש ידידותי בעברית</li>
+                    <li>מערכת קרדיטים גמישה</li>
+                    <li>תמיכה בשרתי MCP</li>
+                    <li>דשבורד ניהול מתקדם</li>
+                    <li>תמיכה טכנית מהירה</li>
+                    <li>עדכונים וחידושים רציפים</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const API_BASE = 'http://localhost:3003';
+        let selectedPlan = 'free';
+        
+        // Plan selection
+        document.querySelectorAll('.plan-option').forEach(option => {
+            option.addEventListener('click', function() {
+                document.querySelectorAll('.plan-option').forEach(o => o.classList.remove('selected'));
+                this.classList.add('selected');
+                selectedPlan = this.dataset.plan;
+            });
+        });
+        
+        // Password strength checker
+        document.getElementById('password').addEventListener('input', function() {
+            const password = this.value;
+            const strength = calculatePasswordStrength(password);
+            updatePasswordStrength(strength);
+        });
+        
+        function calculatePasswordStrength(password) {
+            let score = 0;
+            if (password.length >= 8) score++;
+            if (/[a-z]/.test(password)) score++;
+            if (/[A-Z]/.test(password)) score++;
+            if (/[0-9]/.test(password)) score++;
+            if (/[^A-Za-z0-9]/.test(password)) score++;
+            return score;
+        }
+        
+        function updatePasswordStrength(score) {
+            const strengthFill = document.getElementById('strengthFill');
+            const strengthText = document.getElementById('strengthText');
+            
+            strengthFill.className = 'strength-fill';
+            
+            switch(score) {
+                case 0:
+                case 1:
+                    strengthFill.classList.add('strength-weak');
+                    strengthText.textContent = 'חלשה';
+                    break;
+                case 2:
+                    strengthFill.classList.add('strength-fair');
+                    strengthText.textContent = 'בינונית';
+                    break;
+                case 3:
+                case 4:
+                    strengthFill.classList.add('strength-good');
+                    strengthText.textContent = 'טובה';
+                    break;
+                case 5:
+                    strengthFill.classList.add('strength-strong');
+                    strengthText.textContent = 'חזקה מאוד';
+                    break;
+            }
+        }
+        
+        // Form submission
+        document.getElementById('registerForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = {
+                firstName: document.getElementById('firstName').value,
+                lastName: document.getElementById('lastName').value,
+                email: document.getElementById('email').value,
+                password: document.getElementById('password').value,
+                confirmPassword: document.getElementById('confirmPassword').value,
+                subscription: selectedPlan,
+                agreeTerms: document.getElementById('agreeTerms').checked,
+                agreeMarketing: document.getElementById('agreeMarketing').checked
+            };
+            
+            // Validation
+            if (!validateForm(formData)) {
+                return;
+            }
+            
+            const registerBtn = document.getElementById('registerBtn');
+            registerBtn.disabled = true;
+            registerBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> נרשם...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/auth/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showAlert('נרשמת בהצלחה! מעבר להתחברות...', 'success');
+                    
+                    setTimeout(() => {
+                        window.location.href = 'login.html';
+                    }, 2000);
+                } else {
+                    showAlert(data.message || 'שגיאה בהרשמה', 'error');
+                }
+            } catch (error) {
+                console.error('Registration error:', error);
+                showAlert('שגיאה בחיבור לשרת', 'error');
+            } finally {
+                registerBtn.disabled = false;
+                registerBtn.innerHTML = '<i class="fas fa-user-plus"></i> הירשם עכשיו';
+            }
+        });
+        
+        function validateForm(data) {
+            if (!data.firstName || !data.lastName) {
+                showAlert('יש למלא את השם הפרטי ושם המשפחה', 'error');
+                return false;
+            }
+            
+            if (!data.email || !isValidEmail(data.email)) {
+                showAlert('יש להזין דוא״ל תקין', 'error');
+                return false;
+            }
+            
+            if (data.password.length < 8) {
+                showAlert('הסיסמה חייבת להכיל לפחות 8 תווים', 'error');
+                return false;
+            }
+            
+            if (data.password !== data.confirmPassword) {
+                showAlert('הסיסמאות אינן תואמות', 'error');
+                return false;
+            }
+            
+            if (!data.agreeTerms) {
+                showAlert('יש להסכים לתנאי השימוש', 'error');
+                return false;
+            }
+            
+            return true;
+        }
+        
+        function isValidEmail(email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email);
+        }
+        
+        function showAlert(message, type) {
+            const alertContainer = document.getElementById('alertContainer');
+            const alertClass = type === 'error' ? 'alert-error' : 'alert-success';
+            
+            alertContainer.innerHTML = `
+                <div class="alert ${alertClass}">
+                    ${message}
+                </div>
+            `;
+            
+            setTimeout(() => {
+                alertContainer.innerHTML = '';
+            }, 5000);
+        }
+        
+        // Check if already logged in
+        if (localStorage.getItem('authToken')) {
+            window.location.href = 'chat.html';
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>צ'אט AI - דמו</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #1e3a8a, #7c3aed, #1e40af);
+            color: white;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .header h1 {
+            font-size: 1.5rem;
+        }
+        
+        .model-selector {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 8px 12px;
+            color: white;
+        }
+        
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            max-width: 800px;
+            margin: 0 auto;
+            width: 100%;
+            padding: 20px;
+        }
+        
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .message {
+            max-width: 80%;
+            padding: 15px 20px;
+            border-radius: 20px;
+            position: relative;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .user-message {
+            background: linear-gradient(45deg, #3b82f6, #1d4ed8);
+            align-self: flex-end;
+            margin-left: auto;
+        }
+        
+        .assistant-message {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            align-self: flex-start;
+        }
+        
+        .typing {
+            display: none;
+            align-items: center;
+            gap: 5px;
+            margin-right: 10px;
+        }
+        
+        .typing-dots {
+            display: flex;
+            gap: 3px;
+        }
+        
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: #60a5fa;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+        
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        
+        .input-area {
+            display: flex;
+            gap: 10px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .message-input {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            padding: 12px 15px;
+            color: white;
+            font-size: 1rem;
+        }
+        
+        .message-input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .send-btn {
+            background: linear-gradient(45deg, #3b82f6, #8b5cf6);
+            border: none;
+            border-radius: 10px;
+            padding: 12px 20px;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+        
+        .send-btn:hover {
+            transform: scale(1.05);
+        }
+        
+        .send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-10px); }
+        }
+        
+        .demo-notice {
+            background: rgba(255, 193, 7, 0.2);
+            border: 1px solid rgba(255, 193, 7, 0.3);
+            border-radius: 10px;
+            padding: 10px;
+            margin-bottom: 10px;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>💬 צ'אט AI</h1>
+        <select class="model-selector" id="modelSelect">
+            <option value="claude">Claude 3.5 Sonnet</option>
+            <option value="gpt4">GPT-4</option>
+            <option value="gemini">Gemini Pro</option>
+        </select>
+    </div>
+    
+    <div class="chat-container">
+        <div class="demo-notice">
+            🎭 זהו דמו אינטראקטיבי - תגובות המערכת הן סימולציה
+        </div>
+        
+        <div class="messages" id="messages">
+            <div class="message assistant-message">
+                <strong>🤖 עוזר AI:</strong><br>
+                שלום! אני עוזר AI של הפלטפורמה. איך אני יכול לעזור לך היום?<br>
+                <small style="opacity: 0.7;">📝 דוגמאות: שאל אותי על טכנולוגיה, תכנות, או כל נושא אחר</small>
+            </div>
+        </div>
+        
+        <div class="typing" id="typingIndicator">
+            <span>🤖 כותב</span>
+            <div class="typing-dots">
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+            </div>
+        </div>
+        
+        <div class="input-area">
+            <input 
+                type="text" 
+                class="message-input" 
+                id="messageInput"
+                placeholder="כתוב הודעה..."
+                onkeypress="handleKeyPress(event)"
+            >
+            <button class="send-btn" id="sendBtn" onclick="sendMessage()">שלח 📤</button>
+        </div>
+    </div>
+
+    <script>
+        const responses = [
+            "זה שאלה מעניינת! בהתבסס על הידע שלי, אני יכול לומר ש",
+            "אהבתי את השאלה הזו. מנסיוני,",
+            "נהדר שאתה שואל על זה! הנקודה המרכזית היא ש",
+            "זה נושא מורכב. בואו נפרק אותו יחד:",
+            "מעניין מאוד! המענה תלוי בכמה גורמים:",
+            "שאלה מצוינת! לפי המחקרים העדכניים,"
+        ];
+        
+        const topics = {
+            'טכנולוגיה': 'הטכנולוגיה מתפתחת בקצב מהיר והיא משנה את העולם בדרכים מדהימות. האינטליגנציה המלאכותית, למשל, מהפכה בתחומים רבים.',
+            'תכנות': 'תכנות הוא אומנות ומדע. זה דורש חשיבה לוגית, יצירתיות ותרגול מתמיד. השפות המודרניות כמו Python ו-JavaScript הן נקודות התחלה מעולות.',
+            'AI': 'בינה מלאכותית היא אחד התחומים הכי מרגשים כיום. היא כוללת למידת מכונה, עיבוד שפה טבעית, ורואייה ממוחשבת.',
+            'חינוך': 'חינוך הוא הבסיס לחברה מתקדמת. במאה ה-21, חשובה ללמוד איך ללמוד ולהתאים לשינויים טכנולוגיים.',
+            'בריאות': 'בריאות היא המטבע היקר ביותר. שילוב של תזונה נכונה, פעילות גופנית ובריאות נפשית חיוני לחיים טובים.'
+        };
+        
+        function addMessage(content, isUser = false) {
+            const messagesContainer = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user-message' : 'assistant-message'}`;
+            
+            if (isUser) {
+                messageDiv.innerHTML = `<strong>👤 אתה:</strong><br>${content}`;
+            } else {
+                messageDiv.innerHTML = `<strong>🤖 עוזר AI:</strong><br>${content}`;
+            }
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+        
+        function generateResponse(userMessage) {
+            const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+            
+            // חיפוש נושא רלוונטי
+            let topicResponse = '';
+            for (const [topic, response] of Object.entries(topics)) {
+                if (userMessage.includes(topic.toLowerCase()) || userMessage.includes(topic)) {
+                    topicResponse = response;
+                    break;
+                }
+            }
+            
+            if (!topicResponse) {
+                const topicKeys = Object.keys(topics);
+                topicResponse = topics[topicKeys[Math.floor(Math.random() * topicKeys.length)]];
+            }
+            
+            return randomResponse + ' ' + topicResponse + '\n\n💡 האם תרצה לדעת עוד על הנושא הזה?';
+        }
+        
+        function showTyping() {
+            document.getElementById('typingIndicator').style.display = 'flex';
+        }
+        
+        function hideTyping() {
+            document.getElementById('typingIndicator').style.display = 'none';
+        }
+        
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            // הוסף הודעת משתמש
+            addMessage(message, true);
+            input.value = '';
+            
+            // הראה אינדיקטור הקלדה
+            showTyping();
+            
+            // נבה תשובה אחרי דיליי
+            setTimeout(() => {
+                hideTyping();
+                const response = generateResponse(message);
+                addMessage(response);
+            }, 1000 + Math.random() * 2000); // 1-3 שניות
+        }
+        
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+        
+        // הודעות דמו אוטומטיות
+        setTimeout(() => {
+            addMessage('ברוך הבא לדמו! נסה לשאול אותי משהו 😊');
+        }, 2000);
+        
+        // פוקוס על שדה הקלט
+        document.getElementById('messageInput').focus();
+    </script>
+</body>
+</html>

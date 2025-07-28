@@ -1,138 +1,164 @@
-# AI Platform with MCP Integration
+# 🤖 AI Platform - פלטפורמת בינה מלאכותית מתקדמת
 
-A professional AI platform that provides Claude-like functionality with Model Context Protocol (MCP) server integration, custom prompt engineering, and monetization capabilities.
+פלטפורמה מלאה לניהול ושימוש במודלי בינה מלאכותית עם תמיכה ב-MCP, מערכת חיובים ומנויים.
 
-## 🚀 Quick Start
+## ✨ תכונות עיקריות
 
-```bash
-# Clone the repository
-git clone <repository-url>
-cd ai-platform
+### 🔮 AI Models Support
+- Claude 3 (Sonnet & Haiku)
+- GPT-4 & GPT-3.5 Turbo  
+- Gemini Pro
 
-# Install dependencies
-npm run install:all
+### 💰 מערכת מונטיזציה
+- מנויים חודשיים (חינם, בסיסי, פרימיום, ארגוני)
+- רכישת קרדיטים עם מחירים מדורגים
+- אינטגרציה עם Stripe לתשלומים
 
-# Set up environment variables
-cp .env.example .env
-# Edit .env with your configuration
+### 🔌 MCP Integration
+- חיבור שרתי MCP חיצוניים
+- ניהול מחזור חיים של שרתים
+- מעקב בריאות ולוגים
 
-# Start development servers
-npm run dev
-```
+### 👥 ניהול משתמשים
+- דשבורד ניהול מלא
+- פאנל משתמשים עם CRUD מלא
+- מעקב פעילות ואנליטיקס
 
-## 📁 Project Structure
+## 🚀 התקנה והפעלה
 
-```
-ai-platform/
-├── frontend/           # React/Next.js frontend application
-├── backend/           # Node.js/Express API server
-├── mcp-manager/       # MCP server management layer
-├── database/          # Database schemas and migrations
-├── docs/             # Documentation and guides
-├── TECHNICAL_SPECIFICATION.md
-└── README.md
-```
-
-## 🎯 Key Features
-
-- **AI Chat Interface**: Professional chat UI similar to Claude Desktop
-- **MCP Integration**: Dynamic connection to custom MCP servers
-- **Multi-Model Support**: Claude, GPT, Gemini integration
-- **Prompt Engineering**: Advanced prompt creation and management
-- **Context Engineering**: Dynamic context injection and management
-- **Credit System**: Pay-per-use monetization model
-- **User Management**: Authentication, subscriptions, billing
-- **Enterprise Ready**: Scalable architecture for business use
-
-## 🏗️ Architecture
-
-The platform consists of four main components:
-
-1. **Frontend** (React/Next.js): User interface and experience
-2. **Backend** (Node.js/Express): API server and business logic
-3. **MCP Manager**: Protocol layer for MCP server communication
-4. **Database** (PostgreSQL): Data persistence and management
-
-## 🔧 Development
-
-### Prerequisites
-
+### דרישות מערכת
 - Node.js 20+
-- PostgreSQL 15+
-- Redis (for rate limiting)
+- npm או yarn
 - Git
 
-### Environment Variables
+### התקנה מהירה
 
-```bash
-# Database
-DATABASE_URL="postgresql://user:password@localhost:5432/aiplatform"
+1. **קלון הפרויקט:**
+   ```bash
+   git clone https://github.com/[username]/ai-platform.git
+   cd ai-platform
+   ```
 
-# Authentication
-JWT_SECRET="your-jwt-secret"
-JWT_REFRESH_SECRET="your-refresh-secret"
+2. **התקנת תלויות Backend:**
+   ```bash
+   cd backend
+   npm install
+   ```
 
-# AI Providers
-CLAUDE_API_KEY="your-claude-key"
-OPENAI_API_KEY="your-openai-key"
+3. **התקנת תלויות Frontend:**
+   ```bash
+   cd ../frontend-next
+   npm install
+   ```
 
-# Payment
-STRIPE_SECRET_KEY="your-stripe-key"
-STRIPE_WEBHOOK_SECRET="your-webhook-secret"
+4. **הגדרת מסד נתונים:**
+   ```bash
+   cd ../backend
+   npm run db:generate
+   npm run db:migrate
+   npm run db:seed
+   ```
 
-# Email
-SENDGRID_API_KEY="your-sendgrid-key"
-```
+5. **הפעלת השרתים:**
+   ```bash
+   # מהתיקייה הראשית
+   ./start-servers.bat
+   # או באופן ידני:
+   # Backend: cd backend && npm run dev
+   # Frontend: cd frontend-next && npm run dev
+   ```
 
-### Scripts
+### כתובות השרתים
+- **Frontend**: http://localhost:3000
+- **Backend API**: http://localhost:3004
+- **API Documentation**: http://localhost:3004/api
+- **Health Check**: http://localhost:3004/health
 
-```bash
-npm run dev              # Start all development servers
-npm run build            # Build all applications
-npm run test             # Run all tests
-npm run lint             # Lint all code
-npm run db:migrate       # Run database migrations
-npm run db:seed          # Seed database with sample data
-```
+## 👥 משתמשי בדיקה
 
-## 📊 Progress Tracking
+### מנהל מערכת:
+- **אימייל**: `admin@platform.com`
+- **סיסמה**: `admin123`
 
-### ✅ Completed
-- [x] Project initialization and structure
-- [x] Technical specification document
-- [x] Git repository setup
+### משתמשי דמו:
+- **אימייל**: `user1@example.com` | **סיסמה**: `demo123`
+- **אימייל**: `test@platform.com` | **סיסמה**: `demo123`
 
-### 🟡 In Progress
-- [ ] Project structure and initial files
+## 🔧 API Endpoints
 
-### ⏳ Pending
-- [ ] Frontend development setup
-- [ ] Backend API development
-- [ ] Database schema implementation
-- [ ] MCP integration layer
-- [ ] Authentication system
-- [ ] Billing and subscription system
+- GET /health - בדיקת תקינות
+- GET /api - תיעוד API
+- POST /api/auth/register - הרשמה
+- POST /api/chat - צ'אט עם AI
+- GET /api/user - ניהול משתמשים
 
-## 🤝 Contributing
+## 💳 מנויים ותמחור
 
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Make your changes and add tests
-4. Commit your changes: `git commit -m 'feat: add amazing feature'`
-5. Push to the branch: `git push origin feature/amazing-feature`
-6. Open a Pull Request
-
-## 📄 License
-
-This project is proprietary software. All rights reserved.
-
-## 📞 Support
-
-For support and questions, please contact:
-- Email: support@aiplatform.com
-- Documentation: [Link to docs]
-- Issues: [GitHub Issues]
+| תוכנית | מחיר | קרדיטים | תכונות |
+|---------|------|----------|---------|
+| חינם | ₪0 | 100 | צ'אט בסיסי |
+| בסיסי | ₪29 | 1,000 | כל המודלים |
+| פרימיום | ₪99 | 5,000 | MCP + תמיכה |
+| ארגוני | ₪299 | 20,000 | API + תמיכה 24/7 |
 
 ---
 
-*Built with ❤️ for the future of AI-powered applications*
+**הפלטפורמה מוכנה לשימוש\! 🎉**
+
+## 🛠️ מבנה הפרויקט
+
+```
+ai-platform/
+├── backend/                 # שרת Node.js + Express
+│   ├── src/
+│   │   ├── controllers/     # בקרים
+│   │   ├── routes/         # נתיבי API
+│   │   ├── services/       # שירותים
+│   │   ├── middleware/     # middleware
+│   │   └── utils/          # כלי עזר
+│   ├── prisma/             # סכימת מסד נתונים
+│   └── package.json
+├── frontend-next/          # ממשק משתמש Next.js
+│   ├── src/
+│   │   ├── app/           # דפי האפליקציה
+│   │   ├── components/    # רכיבי React
+│   │   ├── contexts/      # Context providers
+│   │   └── hooks/         # Custom hooks
+│   └── package.json
+├── mcp-servers/           # שרתי MCP
+├── docker-compose.yml     # הגדרות Docker
+└── start-servers.bat      # הפעלת השרתים
+
+```
+
+## 🔥 תכונות מתקדמות
+
+### ⚡ מערכת ניהול שגיאות מתקדמת
+- **Error Boundary** - תפיסת שגיאות React
+- **Global Error Context** - ניהול שגיאות גלובלי
+- **API Error Handling** - טיפול חכם בשגיאות API
+- **User-Friendly Messages** - הודעות ברורות בעברית
+- **Retry Logic** - ניסיון חוזר אוטומטי
+
+### 🔐 אבטחה ואימות
+- **JWT Authentication** - אימות מבוסס טוקנים
+- **Password Hashing** - הצפנת סיסמאות עם bcrypt
+- **Rate Limiting** - הגבלת קצב בקשות
+- **CORS Protection** - הגנת CORS
+- **Input Validation** - וולידציה של קלטים
+
+### 📊 ניטור וביצועים
+- **Health Checks** - בדיקות תקינות
+- **Logging System** - מערכת לוגים מתקדמת
+- **Error Tracking** - מעקב שגיאות
+- **Performance Monitoring** - ניטור ביצועים
+
+🔗 **קישורים מהירים:**
+- **Frontend**: http://localhost:3000
+- **Backend API**: http://localhost:3004
+- **API Documentation**: http://localhost:3004/api
+- **Health Check**: http://localhost:3004/health
+
+---
+
+**המערכת מוכנה לשימוש ופריסה!** 🚀

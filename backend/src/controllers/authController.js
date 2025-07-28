@@ -1,555 +1,289 @@
-const bcrypt = require('bcryptjs');
-const crypto = require('crypto');
-const { prisma, withTransaction } = require('../config/database');
-const { AppError } = require('../middleware/errorHandler');
-const { generateAccessToken, generateRefreshToken, verifyToken } = require('../middleware/auth');
-const logger = require('../utils/logger');
-const emailService = require('../services/emailService');
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
+const { PrismaClient } = require("@prisma/client");
+const logger = require("../utils/logger");
 
-// Register new user
-const register = async (req, res) => {
-  const { email, password, firstName, lastName } = req.body;
+const prisma = new PrismaClient();
 
-  // Check if user already exists
-  const existingUser = await prisma.user.findUnique({
-    where: { email }
-  });
+const sign = (payload) =>
+  jwt.sign(payload, process.env.JWT_SECRET || "dev-secret", { expiresIn: "7d" });
 
-  if (existingUser) {
-    throw new AppError('User with this email already exists', 409);
-  }
+// User registration
+exports.register = async (req, res) => {
+  try {
+    const { 
+      firstName, 
+      lastName, 
+      email, 
+      password,
+      agreeTerms 
+    } = req.body || {};
 
-  // Hash password
-  const saltRounds = 12;
-  const passwordHash = await bcrypt.hash(password, saltRounds);
-
-  // Generate email verification token
-  const emailVerificationToken = crypto.randomBytes(32).toString('hex');
-
-  // Create user with transaction
-  const { user, refreshTokenRecord } = await withTransaction(async (tx) => {
-    // Create user
-    const newUser = await tx.user.create({
-      data: {
-        email,
-        passwordHash,
-        firstName,
-        lastName,
-        credits: 1000, // Welcome credits
-      },
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        role: true,
-        credits: true,
-        subscriptionTier: true,
-        emailVerified: true,
-        createdAt: true
-      }
-    });
-
-    // Generate refresh token
-    const refreshToken = generateRefreshToken(newUser.id);
-    const refreshTokenRecord = await tx.refreshToken.create({
-      data: {
-        userId: newUser.id,
-        token: refreshToken,
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
-      }
-    });
-
-    // Log registration
-    await tx.auditLog.create({
-      data: {
-        userId: newUser.id,
-        action: 'USER_REGISTERED',
-        entity: 'User',
-        entityId: newUser.id,
-        newData: { email, firstName, lastName },
-        ipAddress: req.ip,
-        userAgent: req.get('User-Agent')
-      }
-    });
-
-    return { user: newUser, refreshTokenRecord };
-  });
-
-  // Send verification email (async, don't wait)
-  emailService.sendVerificationEmail(user.email, user.firstName, emailVerificationToken)
-    .catch((error) => {
-      logger.error('Failed to send verification email:', error);
-    });
-
-  // Generate access token
-  const accessToken = generateAccessToken(user.id);
-
-  logger.info('User registered successfully', {
-    userId: user.id,
-    email: user.email,
-    ip: req.ip
-  });
-
-  res.status(201).json({
-    status: 'success',
-    message: 'User registered successfully. Please check your email for verification.',
-    data: {
-      user,
-      tokens: {
-        accessToken,
-        refreshToken: refreshTokenRecord.token,
-        expiresIn: process.env.JWT_EXPIRES_IN || '15m'
-      }
+    // Validation
+    if (!email || !password || !firstName || !lastName) {
+      return res.status(400).json({ 
+        status: "fail", 
+        message: "יש למלא את כל השדות הנדרשים" 
+      });
     }
-  });
-};
 
-// Login user
-const login = async (req, res) => {
-  const { email, password } = req.body;
-
-  // Find user
-  const user = await prisma.user.findUnique({
-    where: { email },
-    select: {
-      id: true,
-      email: true,
-      passwordHash: true,
-      firstName: true,
-      lastName: true,
-      role: true,
-      credits: true,
-      subscriptionTier: true,
-      emailVerified: true,
-      isActive: true,
-      deletedAt: true,
-      createdAt: true
+    if (!agreeTerms) {
+      return res.status(400).json({ 
+        status: "fail", 
+        message: "יש להסכים לתנאי השימוש" 
+      });
     }
-  });
 
-  if (!user || user.deletedAt || !user.isActive) {
-    logger.logSecurity('Login attempt with invalid email', {
-      email,
-      ip: req.ip,
-      userAgent: req.get('User-Agent')
-    });
-    throw new AppError('Invalid email or password', 401);
-  }
-
-  // Check password
-  const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
-  
-  if (!isPasswordValid) {
-    logger.logSecurity('Login attempt with invalid password', {
-      userId: user.id,
-      email,
-      ip: req.ip,
-      userAgent: req.get('User-Agent')
-    });
-    throw new AppError('Invalid email or password', 401);
-  }
-
-  // Generate tokens and update user
-  const { refreshTokenRecord } = await withTransaction(async (tx) => {
-    // Clean up old refresh tokens
-    await tx.refreshToken.deleteMany({
-      where: {
-        userId: user.id,
-        OR: [
-          { expiresAt: { lt: new Date() } },
-          { revokedAt: { not: null } }
-        ]
-      }
-    });
-
-    // Generate new refresh token
-    const refreshToken = generateRefreshToken(user.id);
-    const refreshTokenRecord = await tx.refreshToken.create({
-      data: {
-        userId: user.id,
-        token: refreshToken,
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
-      }
-    });
-
-    // Update last login
-    await tx.user.update({
-      where: { id: user.id },
-      data: { lastLoginAt: new Date() }
-    });
-
-    // Log login
-    await tx.auditLog.create({
-      data: {
-        userId: user.id,
-        action: 'USER_LOGIN',
-        entity: 'User',
-        entityId: user.id,
-        ipAddress: req.ip,
-        userAgent: req.get('User-Agent')
-      }
-    });
-
-    return { refreshTokenRecord };
-  });
-
-  // Generate access token
-  const accessToken = generateAccessToken(user.id);
-
-  // Remove sensitive data
-  const { passwordHash, ...userWithoutPassword } = user;
-
-  logger.info('User logged in successfully', {
-    userId: user.id,
-    email: user.email,
-    ip: req.ip
-  });
-
-  res.json({
-    status: 'success',
-    message: 'Login successful',
-    data: {
-      user: userWithoutPassword,
-      tokens: {
-        accessToken,
-        refreshToken: refreshTokenRecord.token,
-        expiresIn: process.env.JWT_EXPIRES_IN || '15m'
-      }
-    }
-  });
-};
-
-// Refresh access token
-const refresh = async (req, res) => {
-  const { refreshToken } = req.body;
-
-  if (!refreshToken) {
-    throw new AppError('Refresh token required', 401);
-  }
-
-  // Verify refresh token
-  const decoded = verifyToken(refreshToken, process.env.JWT_REFRESH_SECRET);
-
-  if (decoded.type !== 'refresh') {
-    throw new AppError('Invalid token type', 401);
-  }
-
-  // Check if refresh token exists and is valid
-  const refreshTokenRecord = await prisma.refreshToken.findFirst({
-    where: {
-      token: refreshToken,
-      userId: decoded.userId,
-      expiresAt: { gt: new Date() },
-      revokedAt: null
-    },
-    include: {
-      user: {
-        select: {
-          id: true,
-          email: true,
-          firstName: true,
-          lastName: true,
-          role: true,
-          credits: true,
-          subscriptionTier: true,
-          emailVerified: true,
-          isActive: true,
-          deletedAt: true
-        }
-      }
-    }
-  });
-
-  if (!refreshTokenRecord || !refreshTokenRecord.user.isActive || refreshTokenRecord.user.deletedAt) {
-    logger.logSecurity('Invalid refresh token used', {
-      userId: decoded.userId,
-      ip: req.ip,
-      userAgent: req.get('User-Agent')
-    });
-    throw new AppError('Invalid refresh token', 401);
-  }
-
-  // Generate new access token
-  const accessToken = generateAccessToken(refreshTokenRecord.user.id);
-
-  res.json({
-    status: 'success',
-    data: {
-      accessToken,
-      expiresIn: process.env.JWT_EXPIRES_IN || '15m'
-    }
-  });
-};
-
-// Logout user
-const logout = async (req, res) => {
-  const { refreshToken } = req.body;
-
-  if (refreshToken) {
-    // Revoke the specific refresh token
-    await prisma.refreshToken.updateMany({
-      where: {
-        token: refreshToken,
-        userId: req.user.id
-      },
-      data: {
-        revokedAt: new Date()
-      }
-    });
-  }
-
-  // Log logout
-  await prisma.auditLog.create({
-    data: {
-      userId: req.user.id,
-      action: 'USER_LOGOUT',
-      entity: 'User',
-      entityId: req.user.id,
-      ipAddress: req.ip,
-      userAgent: req.get('User-Agent')
-    }
-  });
-
-  logger.info('User logged out', {
-    userId: req.user.id,
-    ip: req.ip
-  });
-
-  res.json({
-    status: 'success',
-    message: 'Logged out successfully'
-  });
-};
-
-// Logout from all devices
-const logoutAll = async (req, res) => {
-  // Revoke all refresh tokens for user
-  await prisma.refreshToken.updateMany({
-    where: {
-      userId: req.user.id,
-      revokedAt: null
-    },
-    data: {
-      revokedAt: new Date()
-    }
-  });
-
-  // Log logout all
-  await prisma.auditLog.create({
-    data: {
-      userId: req.user.id,
-      action: 'USER_LOGOUT_ALL',
-      entity: 'User',
-      entityId: req.user.id,
-      ipAddress: req.ip,
-      userAgent: req.get('User-Agent')
-    }
-  });
-
-  logger.info('User logged out from all devices', {
-    userId: req.user.id,
-    ip: req.ip
-  });
-
-  res.json({
-    status: 'success',
-    message: 'Logged out from all devices successfully'
-  });
-};
-
-// Get current user
-const getMe = async (req, res) => {
-  res.json({
-    status: 'success',
-    data: {
-      user: req.user
-    }
-  });
-};
-
-// Update user profile
-const updateProfile = async (req, res) => {
-  const { firstName, lastName, email } = req.body;
-  
-  const updateData = {};
-  if (firstName !== undefined) updateData.firstName = firstName;
-  if (lastName !== undefined) updateData.lastName = lastName;
-  
-  // If email is being changed, require verification
-  if (email && email !== req.user.email) {
+    // Check if user already exists
     const existingUser = await prisma.user.findUnique({
       where: { email }
     });
 
     if (existingUser) {
-      throw new AppError('Email already in use', 409);
+      return res.status(400).json({ 
+        status: "fail", 
+        message: "המשתמש כבר קיים במערכת" 
+      });
     }
 
-    updateData.email = email;
-    updateData.emailVerified = false;
-  }
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 12);
 
-  const updatedUser = await prisma.user.update({
-    where: { id: req.user.id },
-    data: updateData,
-    select: {
-      id: true,
-      email: true,
-      firstName: true,
-      lastName: true,
-      role: true,
-      credits: true,
-      subscriptionTier: true,
-      emailVerified: true,
-      createdAt: true,
-      updatedAt: true
-    }
-  });
+    // Get credits for subscription
+    const subscriptionCredits = {
+      free: 100,
+      basic: 1000,
+      premium: 5000,
+      enterprise: 20000
+    };
 
-  // Log profile update
-  await prisma.auditLog.create({
-    data: {
-      userId: req.user.id,
-      action: 'PROFILE_UPDATED',
-      entity: 'User',
-      entityId: req.user.id,
-      oldData: { 
-        firstName: req.user.firstName, 
-        lastName: req.user.lastName,
-        email: req.user.email 
-      },
-      newData: updateData,
-      ipAddress: req.ip,
-      userAgent: req.get('User-Agent')
-    }
-  });
-
-  res.json({
-    status: 'success',
-    message: 'Profile updated successfully',
-    data: {
-      user: updatedUser
-    }
-  });
-};
-
-// Change password
-const changePassword = async (req, res) => {
-  const { currentPassword, newPassword } = req.body;
-
-  // Get user with password
-  const user = await prisma.user.findUnique({
-    where: { id: req.user.id },
-    select: { passwordHash: true }
-  });
-
-  // Verify current password
-  const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.passwordHash);
-  
-  if (!isCurrentPasswordValid) {
-    throw new AppError('Current password is incorrect', 400);
-  }
-
-  // Hash new password
-  const saltRounds = 12;
-  const newPasswordHash = await bcrypt.hash(newPassword, saltRounds);
-
-  // Update password and revoke all refresh tokens
-  await withTransaction(async (tx) => {
-    await tx.user.update({
-      where: { id: req.user.id },
-      data: { passwordHash: newPasswordHash }
-    });
-
-    // Revoke all refresh tokens (force re-login)
-    await tx.refreshToken.updateMany({
-      where: {
-        userId: req.user.id,
-        revokedAt: null
-      },
+    // Create user
+    const user = await prisma.user.create({
       data: {
-        revokedAt: new Date()
+        firstName,
+        lastName,
+        email,
+        password: hashedPassword,
+        emailVerified: true
       }
     });
 
-    // Log password change
-    await tx.auditLog.create({
-      data: {
-        userId: req.user.id,
-        action: 'PASSWORD_CHANGED',
-        entity: 'User',
-        entityId: req.user.id,
-        ipAddress: req.ip,
-        userAgent: req.get('User-Agent')
+    logger.info(`New user registered: ${email}`);
+
+    // Generate tokens
+    const accessToken = sign({ 
+      sub: user.id, 
+      email: user.email,
+      type: "access",
+      role: user.role 
+    });
+
+    const refreshToken = sign({ 
+      sub: user.id, 
+      type: "refresh" 
+    });
+
+    res.json({
+      status: "success",
+      message: "נרשמת בהצלחה!",
+      accessToken: accessToken,
+      refreshToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role
       }
     });
-  });
 
-  logger.info('User changed password', {
-    userId: req.user.id,
-    ip: req.ip
-  });
-
-  res.json({
-    status: 'success',
-    message: 'Password changed successfully. Please login again.'
-  });
+  } catch (error) {
+    logger.error("Registration error:", error);
+    res.status(500).json({ 
+      status: "error", 
+      message: "שגיאה בהרשמה" 
+    });
+  }
 };
 
-// Placeholder implementations for other auth methods
-const forgotPassword = async (req, res) => {
-  // TODO: Implement password reset functionality
-  res.json({
-    status: 'success',
-    message: 'Password reset email sent (not implemented yet)'
-  });
+// User login
+exports.login = async (req, res) => {
+  try {
+    const { email, password } = req.body || {};
+
+    if (!email || !password) {
+      return res.status(400).json({ 
+        status: "fail", 
+        message: "יש להזין דוא״ל וסיסמה" 
+      });
+    }
+
+    // Find user
+    const user = await prisma.user.findUnique({
+      where: { email }
+    });
+
+    if (!user) {
+      return res.status(401).json({ 
+        status: "fail", 
+        message: "דוא״ל או סיסמה שגויים" 
+      });
+    }
+
+    // Check password
+    const validPassword = await bcrypt.compare(password, user.password);
+    if (!validPassword) {
+      return res.status(401).json({ 
+        status: "fail", 
+        message: "דוא״ל או סיסמה שגויים" 
+      });
+    }
+
+    // User is active by default (no status field in schema)
+
+    // Update last login
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { lastLogin: new Date() }
+    });
+
+    logger.info(`User logged in: ${email}`);
+
+    // Generate tokens
+    const accessToken = sign({ 
+      sub: user.id, 
+      email: user.email,
+      type: "access",
+      role: user.role 
+    });
+
+    const refreshToken = sign({ 
+      sub: user.id, 
+      type: "refresh" 
+    });
+
+    res.json({
+      status: "success",
+      message: "התחברת בהצלחה!",
+      accessToken: accessToken,
+      refreshToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role
+      }
+    });
+
+  } catch (error) {
+    logger.error("Login error:", error);
+    res.status(500).json({ 
+      status: "error", 
+      message: "שגיאה בהתחברות" 
+    });
+  }
 };
 
-const resetPassword = async (req, res) => {
-  // TODO: Implement password reset functionality
-  res.json({
-    status: 'success',
-    message: 'Password reset successful (not implemented yet)'
-  });
+// Get current user info
+exports.me = async (req, res) => {
+  try {
+    const userId = req.user.sub;
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        subscription: true,
+        credits: true,
+        role: true,
+        status: true,
+        createdAt: true,
+        lastLogin: true
+      }
+    });
+
+    if (!user) {
+      return res.status(404).json({ 
+        status: "fail", 
+        message: "משתמש לא נמצא" 
+      });
+    }
+
+    res.json({
+      status: "success",
+      user
+    });
+
+  } catch (error) {
+    logger.error("Get user error:", error);
+    res.status(500).json({ 
+      status: "error", 
+      message: "שגיאה בטעינת פרטי משתמש" 
+    });
+  }
 };
 
-const verifyEmail = async (req, res) => {
-  // TODO: Implement email verification
-  res.json({
-    status: 'success',
-    message: 'Email verified (not implemented yet)'
-  });
+// Refresh token
+exports.refresh = async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+
+    if (!refreshToken) {
+      return res.status(400).json({ 
+        status: "fail", 
+        message: "Refresh token required" 
+      });
+    }
+
+    const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET || "dev-secret");
+    
+    if (decoded.type !== 'refresh') {
+      return res.status(400).json({ 
+        status: "fail", 
+        message: "Invalid token type" 
+      });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.sub }
+    });
+
+    if (!user) {
+      return res.status(401).json({ 
+        status: "fail", 
+        message: "משתמש לא נמצא" 
+      });
+    }
+
+    const newAccessToken = sign({ 
+      sub: user.id, 
+      email: user.email,
+      type: "access",
+      role: user.role 
+    });
+
+    res.json({
+      status: "success",
+      token: newAccessToken
+    });
+
+  } catch (error) {
+    logger.error("Token refresh error:", error);
+    res.status(401).json({ 
+      status: "fail", 
+      message: "Token לא תקין" 
+    });
+  }
 };
 
-const resendVerification = async (req, res) => {
-  // TODO: Implement resend verification
+// Logout
+exports.logout = (req, res) => {
   res.json({
-    status: 'success',
-    message: 'Verification email sent (not implemented yet)'
+    status: "success",
+    message: "התנתקת בהצלחה"
   });
-};
-
-const deleteAccount = async (req, res) => {
-  // TODO: Implement account deletion
-  res.json({
-    status: 'success',
-    message: 'Account deleted (not implemented yet)'
-  });
-};
-
-module.exports = {
-  register,
-  login,
-  refresh,
-  logout,
-  logoutAll,
-  getMe,
-  updateProfile,
-  changePassword,
-  forgotPassword,
-  resetPassword,
-  verifyEmail,
-  resendVerification,
-  deleteAccount
 };

@@ -1,376 +1,378 @@
 const express = require('express');
-const { body, param, query } = require('express-validator');
-const mcpController = require('../controllers/mcpController');
-const { validateRequest } = require('../middleware/validation');
-const { authenticate, authorize } = require('../middleware/auth');
-const { catchAsync } = require('../middleware/errorHandler');
+const { authenticate } = require('../middleware/auth');
+const { requirePermission, requireResourceOwnership } = require('../middleware/rbac');
+const { securityLimiter } = require('../middleware/rateLimiter');
+const mcpService = require('../services/mcpService');
+const { PrismaClient } = require('@prisma/client');
+const logger = require('../utils/logger');
 
 const router = express.Router();
+const prisma = new PrismaClient();
 
-// All MCP routes require authentication
+// Apply authentication to all MCP routes
 router.use(authenticate);
 
-// Validation rules
-const createServerValidation = [
-  body('name')
-    .notEmpty()
-    .withMessage('Server name is required')
-    .isLength({ min: 1, max: 100 })
-    .withMessage('Server name must be between 1 and 100 characters')
-    .matches(/^[a-zA-Z0-9\-_\s]+$/)
-    .withMessage('Server name can only contain letters, numbers, hyphens, underscores, and spaces'),
-  body('description')
-    .optional()
-    .isLength({ max: 500 })
-    .withMessage('Description must be less than 500 characters'),
-  body('command')
-    .notEmpty()
-    .withMessage('Command is required')
-    .isLength({ min: 1, max: 255 })
-    .withMessage('Command must be between 1 and 255 characters'),
-  body('args')
-    .optional()
-    .isArray()
-    .withMessage('Args must be an array'),
-  body('env')
-    .optional()
-    .isObject()
-    .withMessage('Environment variables must be an object'),
-];
+// Get user's MCP servers
+router.get('/', async (req, res) => {
+  try {
+    const userId = req.user.sub;
+    const servers = await mcpService.getUserServers(userId);
+    
+    res.json({
+      status: 'success',
+      data: {
+        servers,
+        total: servers.length
+      }
+    });
+  } catch (error) {
+    logger.error('Error fetching MCP servers:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Failed to fetch MCP servers'
+    });
+  }
+});
 
-const updateServerValidation = [
-  body('name')
-    .optional()
-    .isLength({ min: 1, max: 100 })
-    .withMessage('Server name must be between 1 and 100 characters')
-    .matches(/^[a-zA-Z0-9\-_\s]+$/)
-    .withMessage('Server name can only contain letters, numbers, hyphens, underscores, and spaces'),
-  body('description')
-    .optional()
-    .isLength({ max: 500 })
-    .withMessage('Description must be less than 500 characters'),
-  body('command')
-    .optional()
-    .isLength({ min: 1, max: 255 })
-    .withMessage('Command must be between 1 and 255 characters'),
-  body('args')
-    .optional()
-    .isArray()
-    .withMessage('Args must be an array'),
-  body('env')
-    .optional()
-    .isObject()
-    .withMessage('Environment variables must be an object'),
-  body('enabled')
-    .optional()
-    .isBoolean()
-    .withMessage('Enabled must be a boolean'),
-];
-
-const serverIdValidation = [
-  param('serverId')
-    .isUUID()
-    .withMessage('Invalid server ID format'),
-];
-
-const toolCallValidation = [
-  body('toolName')
-    .notEmpty()
-    .withMessage('Tool name is required'),
-  body('parameters')
-    .optional()
-    .isObject()
-    .withMessage('Parameters must be an object'),
-];
-
-const paginationValidation = [
-  query('page')
-    .optional()
-    .isInt({ min: 1 })
-    .withMessage('Page must be a positive integer'),
-  query('limit')
-    .optional()
-    .isInt({ min: 1, max: 100 })
-    .withMessage('Limit must be between 1 and 100'),
-];
-
-// Routes
-
-/**
- * @route   GET /api/mcp/servers
- * @desc    Get user's MCP servers
- * @access  Private
- */
-router.get('/servers',
-  paginationValidation,
-  [
-    query('enabled')
-      .optional()
-      .isBoolean()
-      .withMessage('Enabled filter must be boolean'),
-    query('healthStatus')
-      .optional()
-      .isIn(['HEALTHY', 'UNHEALTHY', 'UNKNOWN', 'CONNECTING', 'ERROR'])
-      .withMessage('Invalid health status'),
-  ],
-  validateRequest,
-  catchAsync(mcpController.getServers)
+// Get all servers (admin only)
+router.get('/admin/all', 
+  requirePermission('mcp:manage'),
+  async (req, res) => {
+    try {
+      const servers = await mcpService.getAllServers();
+      
+      res.json({
+        status: 'success',
+        data: {
+          servers,
+          total: servers.length
+        }
+      });
+    } catch (error) {
+      logger.error('Error fetching all MCP servers:', error);
+      res.status(500).json({
+        status: 'error',
+        message: 'Failed to fetch MCP servers'
+      });
+    }
+  }
 );
 
-/**
- * @route   POST /api/mcp/servers
- * @desc    Create a new MCP server
- * @access  Private
- */
-router.post('/servers',
-  createServerValidation,
-  validateRequest,
-  catchAsync(mcpController.createServer)
+// Create new MCP server
+router.post('/', 
+  requirePermission('mcp:write'),
+  securityLimiter(5, 300), // 5 servers per 5 minutes
+  async (req, res) => {
+    try {
+      const userId = req.user.sub;
+      const { name, description, command, args, env, enabled } = req.body;
+      
+      if (!name || !command) {
+        return res.status(400).json({
+          status: 'fail',
+          message: 'Server name and command are required'
+        });
+      }
+      
+      const server = await mcpService.createServer(userId, {
+        name,
+        description,
+        command,
+        args,
+        env,
+        enabled
+      });
+      
+      res.status(201).json({
+        status: 'success',
+        data: { server }
+      });
+    } catch (error) {
+      logger.error('Error creating MCP server:', error);
+      res.status(400).json({
+        status: 'error',
+        message: error.message || 'Failed to create MCP server'
+      });
+    }
+  }
 );
 
-/**
- * @route   GET /api/mcp/servers/:serverId
- * @desc    Get specific MCP server details
- * @access  Private
- */
-router.get('/servers/:serverId',
-  serverIdValidation,
-  validateRequest,
-  catchAsync(mcpController.getServer)
+// Get specific server details
+router.get('/:serverId', 
+  requireResourceOwnership('mcpServer', 'serverId'),
+  async (req, res) => {
+    try {
+      const { serverId } = req.params;
+      const stats = await mcpService.getServerStats(serverId);
+      
+      res.json({
+        status: 'success',
+        data: stats
+      });
+    } catch (error) {
+      logger.error('Error fetching MCP server stats:', error);
+      res.status(500).json({
+        status: 'error',
+        message: 'Failed to fetch server details'
+      });
+    }
+  }
 );
 
-/**
- * @route   PUT /api/mcp/servers/:serverId
- * @desc    Update MCP server configuration
- * @access  Private
- */
-router.put('/servers/:serverId',
-  serverIdValidation,
-  updateServerValidation,
-  validateRequest,
-  catchAsync(mcpController.updateServer)
+// Update MCP server
+router.put('/:serverId',
+  requireResourceOwnership('mcpServer', 'serverId'),
+  async (req, res) => {
+    try {
+      const { serverId } = req.params;
+      const userId = req.user.sub;
+      const updates = req.body;
+      
+      const server = await mcpService.updateServer(serverId, userId, updates);
+      
+      res.json({
+        status: 'success',
+        data: { server }
+      });
+    } catch (error) {
+      logger.error('Error updating MCP server:', error);
+      res.status(400).json({
+        status: 'error',
+        message: error.message || 'Failed to update MCP server'
+      });
+    }
+  }
 );
 
-/**
- * @route   DELETE /api/mcp/servers/:serverId
- * @desc    Delete MCP server
- * @access  Private
- */
-router.delete('/servers/:serverId',
-  serverIdValidation,
-  validateRequest,
-  catchAsync(mcpController.deleteServer)
+// Delete MCP server
+router.delete('/:serverId',
+  requireResourceOwnership('mcpServer', 'serverId'),
+  async (req, res) => {
+    try {
+      const { serverId } = req.params;
+      const userId = req.user.sub;
+      
+      await mcpService.removeServer(serverId, userId);
+      
+      res.json({
+        status: 'success',
+        message: 'Server removed successfully'
+      });
+    } catch (error) {
+      logger.error('Error removing MCP server:', error);
+      res.status(400).json({
+        status: 'error',
+        message: error.message || 'Failed to remove MCP server'
+      });
+    }
+  }
 );
 
-/**
- * @route   POST /api/mcp/servers/:serverId/test
- * @desc    Test MCP server connection
- * @access  Private
- */
-router.post('/servers/:serverId/test',
-  serverIdValidation,
-  validateRequest,
-  catchAsync(mcpController.testServer)
+// Start MCP server
+router.post('/:serverId/start',
+  requireResourceOwnership('mcpServer', 'serverId'),
+  requirePermission('mcp:execute'),
+  async (req, res) => {
+    try {
+      const { serverId } = req.params;
+      
+      await mcpService.startServer(serverId);
+      
+      res.json({
+        status: 'success',
+        message: 'Server started successfully'
+      });
+    } catch (error) {
+      logger.error('Error starting MCP server:', error);
+      res.status(400).json({
+        status: 'error',
+        message: error.message || 'Failed to start MCP server'
+      });
+    }
+  }
 );
 
-/**
- * @route   POST /api/mcp/servers/:serverId/start
- * @desc    Start MCP server
- * @access  Private
- */
-router.post('/servers/:serverId/start',
-  serverIdValidation,
-  validateRequest,
-  catchAsync(mcpController.startServer)
+// Stop MCP server
+router.post('/:serverId/stop',
+  requireResourceOwnership('mcpServer', 'serverId'),
+  requirePermission('mcp:execute'),
+  async (req, res) => {
+    try {
+      const { serverId } = req.params;
+      
+      await mcpService.stopServer(serverId);
+      
+      res.json({
+        status: 'success',
+        message: 'Server stopped successfully'
+      });
+    } catch (error) {
+      logger.error('Error stopping MCP server:', error);
+      res.status(400).json({
+        status: 'error',
+        message: error.message || 'Failed to stop MCP server'
+      });
+    }
+  }
 );
 
-/**
- * @route   POST /api/mcp/servers/:serverId/stop
- * @desc    Stop MCP server
- * @access  Private
- */
-router.post('/servers/:serverId/stop',
-  serverIdValidation,
-  validateRequest,
-  catchAsync(mcpController.stopServer)
+// Execute tool on MCP server
+router.post('/:serverId/execute',
+  requireResourceOwnership('mcpServer', 'serverId'),
+  requirePermission('mcp:execute'),
+  securityLimiter(20, 60), // 20 executions per minute
+  async (req, res) => {
+    try {
+      const { serverId } = req.params;
+      const { toolName, parameters = {} } = req.body;
+      
+      if (!toolName) {
+        return res.status(400).json({
+          status: 'fail',
+          message: 'Tool name is required'
+        });
+      }
+      
+      const result = await mcpService.executeTool(serverId, toolName, parameters);
+      
+      res.json({
+        status: 'success',
+        data: { result }
+      });
+    } catch (error) {
+      logger.error('Error executing MCP tool:', error);
+      res.status(400).json({
+        status: 'error',
+        message: error.message || 'Failed to execute tool'
+      });
+    }
+  }
 );
 
-/**
- * @route   POST /api/mcp/servers/:serverId/restart
- * @desc    Restart MCP server
- * @access  Private
- */
-router.post('/servers/:serverId/restart',
-  serverIdValidation,
-  validateRequest,
-  catchAsync(mcpController.restartServer)
+// Get server logs
+router.get('/:serverId/logs',
+  requireResourceOwnership('mcpServer', 'serverId'),
+  requirePermission('mcp:read'),
+  async (req, res) => {
+    try {
+      const { serverId } = req.params;
+      const { limit = 100 } = req.query;
+      
+      // Get tool call logs from database
+      const logs = await prisma.mcpToolCall.findMany({
+        where: { serverId },
+        orderBy: { createdAt: 'desc' },
+        take: parseInt(limit),
+        select: {
+          id: true,
+          toolName: true,
+          success: true,
+          executionTime: true,
+          errorMessage: true,
+          createdAt: true
+        }
+      });
+      
+      res.json({
+        status: 'success',
+        data: { 
+          logs,
+          total: logs.length 
+        }
+      });
+    } catch (error) {
+      logger.error('Error fetching MCP server logs:', error);
+      res.status(500).json({
+        status: 'error',
+        message: 'Failed to fetch server logs'
+      });
+    }
+  }
 );
 
-/**
- * @route   GET /api/mcp/servers/:serverId/tools
- * @desc    Get available tools for MCP server
- * @access  Private
- */
-router.get('/servers/:serverId/tools',
-  serverIdValidation,
-  validateRequest,
-  catchAsync(mcpController.getServerTools)
-);
+// Health check for all user servers
+router.get('/health/check', async (req, res) => {
+  try {
+    const userId = req.user.sub;
+    const servers = await mcpService.getUserServers(userId);
+    
+    const healthStatus = await Promise.all(
+      servers.map(async (server) => {
+        const isHealthy = await mcpService.checkServerHealth(server.id);
+        return {
+          id: server.id,
+          name: server.name,
+          healthy: isHealthy,
+          status: server.healthStatus,
+          lastCheck: server.lastHealthCheck
+        };
+      })
+    );
+    
+    res.json({
+      status: 'success',
+      data: {
+        servers: healthStatus,
+        summary: {
+          total: healthStatus.length,
+          healthy: healthStatus.filter(s => s.healthy).length,
+          unhealthy: healthStatus.filter(s => !s.healthy).length
+        }
+      }
+    });
+  } catch (error) {
+    logger.error('Error performing health check:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Failed to perform health check'
+    });
+  }
+});
 
-/**
- * @route   POST /api/mcp/servers/:serverId/tools/call
- * @desc    Call a tool on MCP server
- * @access  Private
- */
-router.post('/servers/:serverId/tools/call',
-  serverIdValidation,
-  toolCallValidation,
-  validateRequest,
-  catchAsync(mcpController.callTool)
-);
-
-/**
- * @route   GET /api/mcp/servers/:serverId/logs
- * @desc    Get MCP server logs
- * @access  Private
- */
-router.get('/servers/:serverId/logs',
-  serverIdValidation,
-  paginationValidation,
-  [
-    query('startDate')
-      .optional()
-      .isISO8601()
-      .withMessage('Start date must be a valid ISO 8601 date'),
-    query('endDate')
-      .optional()
-      .isISO8601()
-      .withMessage('End date must be a valid ISO 8601 date'),
-    query('level')
-      .optional()
-      .isIn(['error', 'warn', 'info', 'debug'])
-      .withMessage('Invalid log level'),
-  ],
-  validateRequest,
-  catchAsync(mcpController.getServerLogs)
-);
-
-/**
- * @route   GET /api/mcp/servers/:serverId/health
- * @desc    Get MCP server health status
- * @access  Private
- */
-router.get('/servers/:serverId/health',
-  serverIdValidation,
-  validateRequest,
-  catchAsync(mcpController.getServerHealth)
-);
-
-/**
- * @route   GET /api/mcp/servers/:serverId/stats
- * @desc    Get MCP server usage statistics
- * @access  Private
- */
-router.get('/servers/:serverId/stats',
-  serverIdValidation,
-  [
-    query('startDate')
-      .optional()
-      .isISO8601()
-      .withMessage('Start date must be a valid ISO 8601 date'),
-    query('endDate')
-      .optional()
-      .isISO8601()
-      .withMessage('End date must be a valid ISO 8601 date'),
-  ],
-  validateRequest,
-  catchAsync(mcpController.getServerStats)
-);
-
-/**
- * @route   POST /api/mcp/servers/:serverId/clone
- * @desc    Clone MCP server configuration
- * @access  Private
- */
-router.post('/servers/:serverId/clone',
-  serverIdValidation,
-  [
-    body('name')
-      .notEmpty()
-      .withMessage('New server name is required')
-      .isLength({ min: 1, max: 100 })
-      .withMessage('Server name must be between 1 and 100 characters'),
-  ],
-  validateRequest,
-  catchAsync(mcpController.cloneServer)
-);
-
-/**
- * @route   POST /api/mcp/servers/import
- * @desc    Import MCP server configuration
- * @access  Private
- */
-router.post('/servers/import',
-  [
-    body('config')
-      .notEmpty()
-      .withMessage('Server configuration is required')
-      .isObject()
-      .withMessage('Configuration must be an object'),
-  ],
-  validateRequest,
-  catchAsync(mcpController.importServer)
-);
-
-/**
- * @route   GET /api/mcp/servers/:serverId/export
- * @desc    Export MCP server configuration
- * @access  Private
- */
-router.get('/servers/:serverId/export',
-  serverIdValidation,
-  validateRequest,
-  catchAsync(mcpController.exportServer)
-);
-
-/**
- * @route   GET /api/mcp/templates
- * @desc    Get MCP server templates
- * @access  Private
- */
-router.get('/templates',
-  [
-    query('category')
-      .optional()
-      .isString()
-      .withMessage('Category must be a string'),
-  ],
-  validateRequest,
-  catchAsync(mcpController.getTemplates)
-);
-
-/**
- * @route   POST /api/mcp/servers/from-template
- * @desc    Create MCP server from template
- * @access  Private
- */
-router.post('/servers/from-template',
-  [
-    body('templateId')
-      .notEmpty()
-      .withMessage('Template ID is required'),
-    body('name')
-      .notEmpty()
-      .withMessage('Server name is required')
-      .isLength({ min: 1, max: 100 })
-      .withMessage('Server name must be between 1 and 100 characters'),
-    body('config')
-      .optional()
-      .isObject()
-      .withMessage('Configuration overrides must be an object'),
-  ],
-  validateRequest,
-  catchAsync(mcpController.createFromTemplate)
+// Get MCP statistics (admin only)
+router.get('/admin/statistics',
+  requirePermission('admin:analytics'),
+  async (req, res) => {
+    try {
+      const stats = await prisma.mcpServer.groupBy({
+        by: ['healthStatus'],
+        _count: { id: true }
+      });
+      
+      const totalCalls = await prisma.mcpToolCall.count();
+      const recentCalls = await prisma.mcpToolCall.count({
+        where: {
+          createdAt: {
+            gte: new Date(Date.now() - 24 * 60 * 60 * 1000) // Last 24 hours
+          }
+        }
+      });
+      
+      const avgExecutionTime = await prisma.mcpToolCall.aggregate({
+        _avg: { executionTime: true }
+      });
+      
+      res.json({
+        status: 'success',
+        data: {
+          serversByStatus: stats.reduce((acc, stat) => {
+            acc[stat.healthStatus] = stat._count.id;
+            return acc;
+          }, {}),
+          totalServers: stats.reduce((sum, stat) => sum + stat._count.id, 0),
+          totalToolCalls: totalCalls,
+          recentToolCalls: recentCalls,
+          averageExecutionTime: avgExecutionTime._avg.executionTime || 0
+        }
+      });
+    } catch (error) {
+      logger.error('Error fetching MCP statistics:', error);
+      res.status(500).json({
+        status: 'error',
+        message: 'Failed to fetch statistics'
+      });
+    }
+  }
 );
 
 module.exports = router;

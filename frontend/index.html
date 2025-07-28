@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Platform - פלטפורמת בינה מלאכותית</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+            padding: 40px;
+            max-width: 800px;
+            width: 90%;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        
+        .api-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .api-section h3 {
+            color: #495057;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 5px;
+        }
+        
+        .endpoint {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 10px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+            border: 1px solid #dee2e6;
+        }
+        
+        .endpoint code {
+            background: #e9ecef;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .test-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .test-btn:hover {
+            background: #5a6fd8;
+        }
+        
+        .auth-form {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #495057;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ced4da;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        
+        .response-area {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin-top: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+        
+        .status {
+            text-align: center;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 AI Platform</h1>
+        <div id="status" class="status success">השרת פעיל - http://localhost:3003</div>
+        
+        <div class="api-section">
+            <h3>🔐 אימות משתמשים</h3>
+            <div class="auth-form">
+                <div class="form-group">
+                    <label for="email">דוא"ל:</label>
+                    <input type="email" id="email" value="test@example.com">
+                </div>
+                <div class="form-group">
+                    <label for="password">סיסמה:</label>
+                    <input type="password" id="password" value="123456">
+                </div>
+                <button class="test-btn" onclick="register()">הרשמה</button>
+                <button class="test-btn" onclick="login()">התחברות</button>
+            </div>
+        </div>
+        
+        <div class="api-section">
+            <h3>🚀 נקודות API</h3>
+            <div class="endpoint">
+                <span><code>GET /health</code> - בדיקת תקינות</span>
+                <button class="test-btn" onclick="testEndpoint('/health')">בדוק</button>
+            </div>
+            <div class="endpoint">
+                <span><code>GET /api</code> - תיעוד API</span>
+                <button class="test-btn" onclick="testEndpoint('/api')">בדוק</button>
+            </div>
+            <div class="endpoint">
+                <span><code>GET /api/user</code> - פרטי משתמש</span>
+                <button class="test-btn" onclick="testEndpoint('/api/user')">בדוק</button>
+            </div>
+            <div class="endpoint">
+                <span><code>GET /api/mcp</code> - שרתי MCP</span>
+                <button class="test-btn" onclick="testEndpoint('/api/mcp')">בדוק</button>
+            </div>
+            <div class="endpoint">
+                <span><code>GET /api/billing</code> - חיובים</span>
+                <button class="test-btn" onclick="testEndpoint('/api/billing')">בדוק</button>
+            </div>
+        </div>
+        
+        <div class="response-area" id="response">
+            <em>תגובות API יוצגו כאן...</em>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3003';
+        let authToken = null;
+        
+        function updateStatus(message, isError = false) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = isError ? 'status error' : 'status success';
+        }
+        
+        function displayResponse(data, endpoint) {
+            const responseArea = document.getElementById('response');
+            const timestamp = new Date().toLocaleString('he-IL');
+            responseArea.innerHTML = `
+                <strong>[${timestamp}] ${endpoint}</strong><br>
+                ${JSON.stringify(data, null, 2)}
+            `;
+        }
+        
+        async function testEndpoint(endpoint) {
+            try {
+                const response = await fetch(API_BASE + endpoint, {
+                    headers: authToken ? { 'Authorization': `Bearer ${authToken}` } : {}
+                });
+                const data = await response.json();
+                displayResponse(data, endpoint);
+                updateStatus(`✅ ${endpoint} - ${response.status}`);
+            } catch (error) {
+                displayResponse({ error: error.message }, endpoint);
+                updateStatus(`❌ שגיאה: ${error.message}`, true);
+            }
+        }
+        
+        async function register() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                const response = await fetch(API_BASE + '/api/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await response.json();
+                
+                if (data.accessToken) {
+                    authToken = data.accessToken;
+                    updateStatus('✅ הרשמה הצליחה!');
+                } else {
+                    updateStatus('❌ הרשמה נכשלה', true);
+                }
+                
+                displayResponse(data, '/api/auth/register');
+            } catch (error) {
+                updateStatus(`❌ שגיאה: ${error.message}`, true);
+            }
+        }
+        
+        async function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                const response = await fetch(API_BASE + '/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await response.json();
+                
+                if (data.accessToken) {
+                    authToken = data.accessToken;
+                    updateStatus('✅ התחברות הצליחה!');
+                } else {
+                    updateStatus('❌ התחברות נכשלה', true);
+                }
+                
+                displayResponse(data, '/api/auth/login');
+            } catch (error) {
+                updateStatus(`❌ שגיאה: ${error.message}`, true);
+            }
+        }
+        
+        // Test connection on load
+        window.onload = () => {
+            testEndpoint('/health');
+        };
+    </script>
+</body>
+</html>

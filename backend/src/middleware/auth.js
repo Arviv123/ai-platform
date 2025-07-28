@@ -1,365 +1,232 @@
-const jwt = require('jsonwebtoken');
-const { prisma } = require('../config/database');
-const { AppError } = require('./errorHandler');
+const jwt = require("jsonwebtoken");
+const { PrismaClient } = require('@prisma/client');
 const logger = require('../utils/logger');
+const geoip = require('geoip-lite');
+const UAParser = require('ua-parser-js');
 
-// Generate JWT access token
-const generateAccessToken = (userId) => {
-  return jwt.sign(
-    { userId, type: 'access' },
-    process.env.JWT_SECRET,
-    { 
-      expiresIn: process.env.JWT_EXPIRES_IN || '15m',
-      issuer: 'ai-platform',
-      audience: 'ai-platform-users'
-    }
-  );
-};
+const prisma = new PrismaClient();
 
-// Generate JWT refresh token
-const generateRefreshToken = (userId) => {
-  return jwt.sign(
-    { userId, type: 'refresh' },
-    process.env.JWT_REFRESH_SECRET,
-    { 
-      expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
-      issuer: 'ai-platform',
-      audience: 'ai-platform-users'
-    }
-  );
-};
-
-// Verify JWT token
-const verifyToken = (token, secret) => {
+// Enhanced token verification with blacklist check
+async function verifyToken(token) {
   try {
-    return jwt.verify(token, secret, {
-      issuer: 'ai-platform',
-      audience: 'ai-platform-users'
-    });
-  } catch (error) {
-    if (error.name === 'JsonWebTokenError') {
-      throw new AppError('Invalid token', 401);
-    }
-    if (error.name === 'TokenExpiredError') {
-      throw new AppError('Token expired', 401);
-    }
-    throw new AppError('Token verification failed', 401);
-  }
-};
-
-// Authentication middleware
-const authenticate = async (req, res, next) => {
-  try {
-    // Get token from header
-    const authHeader = req.headers.authorization;
+    const payload = jwt.verify(token, process.env.JWT_SECRET || "super-secret-key");
     
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return next(new AppError('Access token required', 401));
+    // Check if token is in blacklist (for logout/compromised tokens)
+    const blacklistedToken = await prisma.refreshToken.findFirst({
+      where: { 
+        token: token,
+        revokedAt: { not: null }
+      }
+    });
+    
+    if (blacklistedToken) {
+      return null;
     }
+    
+    return payload;
+  } catch (e) {
+    logger.warn('Token verification failed:', e.message);
+    return null;
+  }
+}
 
-    const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+// Main authentication middleware
+async function authenticate(req, res, next) {
+  try {
+    const authHeader = req.headers.authorization || "";
+    const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
 
     if (!token) {
-      return next(new AppError('Access token required', 401));
+      return res.status(401).json({ 
+        status: "fail", 
+        message: "Access token required" 
+      });
     }
 
-    // Verify token
-    const decoded = verifyToken(token, process.env.JWT_SECRET);
-
-    if (decoded.type !== 'access') {
-      return next(new AppError('Invalid token type', 401));
+    const payload = await verifyToken(token);
+    if (!payload) {
+      return res.status(401).json({ 
+        status: "fail", 
+        message: "Invalid or expired token" 
+      });
     }
 
-    // Get user from database
+    // Get user details with security info
     const user = await prisma.user.findUnique({
-      where: { 
-        id: decoded.userId,
-        isActive: true,
-        deletedAt: null
-      },
+      where: { id: payload.sub },
       select: {
         id: true,
         email: true,
-        firstName: true,
-        lastName: true,
         role: true,
-        credits: true,
-        subscriptionTier: true,
-        emailVerified: true,
-        createdAt: true,
-        lastLoginAt: true
+        status: true,
+        mfaEnabled: true,
+        organizationId: true,
+        lockedUntil: true,
+        lastLogin: true
       }
     });
 
     if (!user) {
-      logger.logSecurity('Authentication failed - User not found', {
-        userId: decoded.userId,
-        ip: req.ip,
-        userAgent: req.get('User-Agent')
+      return res.status(401).json({ 
+        status: "fail", 
+        message: "User not found" 
       });
-      return next(new AppError('User not found', 401));
     }
 
-    if (!user.emailVerified) {
-      return next(new AppError('Email verification required', 403));
+    // Check if user account is locked
+    if (user.lockedUntil && user.lockedUntil > new Date()) {
+      return res.status(423).json({
+        status: "fail",
+        message: "Account temporarily locked due to security concerns"
+      });
     }
 
-    // Attach user to request
-    req.user = user;
-    req.userId = user.id;
+    // User is active by default (no status field in schema)
 
-    // Update last login time (async, don't wait)
-    prisma.user.update({
-      where: { id: user.id },
-      data: { lastLoginAt: new Date() }
-    }).catch((error) => {
-      logger.error('Failed to update last login time:', error);
-    });
+    // Log security event for high-privilege operations
+    if (req.method !== 'GET' && (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN')) {
+      await logSecurityEvent(req, user);
+    }
 
+    req.user = payload;
+    req.userDetails = user;
     next();
+
   } catch (error) {
-    logger.logSecurity('Authentication failed', {
-      error: error.message,
-      ip: req.ip,
-      userAgent: req.get('User-Agent')
+    logger.error('Authentication middleware error:', error);
+    res.status(500).json({
+      status: "error",
+      message: "Authentication failed"
     });
-    next(error);
   }
-};
+}
 
-// Optional authentication middleware (doesn't fail if no token)
-const optionalAuth = async (req, res, next) => {
-  try {
-    const authHeader = req.headers.authorization;
-    
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return next();
-    }
-
-    const token = authHeader.substring(7);
-
-    if (!token) {
-      return next();
-    }
-
-    const decoded = verifyToken(token, process.env.JWT_SECRET);
-
-    if (decoded.type !== 'access') {
-      return next();
-    }
-
-    const user = await prisma.user.findUnique({
-      where: { 
-        id: decoded.userId,
-        isActive: true,
-        deletedAt: null
-      },
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        role: true,
-        credits: true,
-        subscriptionTier: true,
-        emailVerified: true
-      }
-    });
-
-    if (user && user.emailVerified) {
-      req.user = user;
-      req.userId = user.id;
-    }
-
-    next();
-  } catch (error) {
-    // Ignore authentication errors in optional auth
-    next();
-  }
-};
-
-// Authorization middleware
-const authorize = (...roles) => {
-  return (req, res, next) => {
-    if (!req.user) {
-      return next(new AppError('Authentication required', 401));
-    }
-
-    if (!roles.includes(req.user.role)) {
-      logger.logSecurity('Authorization failed', {
-        userId: req.user.id,
-        requiredRoles: roles,
-        userRole: req.user.role,
-        ip: req.ip,
-        userAgent: req.get('User-Agent')
-      });
-      return next(new AppError('Insufficient permissions', 403));
-    }
-
-    next();
-  };
-};
-
-// Subscription tier authorization
-const requireSubscription = (...tiers) => {
-  return (req, res, next) => {
-    if (!req.user) {
-      return next(new AppError('Authentication required', 401));
-    }
-
-    if (!tiers.includes(req.user.subscriptionTier)) {
-      return next(new AppError('Subscription upgrade required', 403));
-    }
-
-    next();
-  };
-};
-
-// Credits check middleware
-const requireCredits = (minCredits = 1) => {
-  return (req, res, next) => {
-    if (!req.user) {
-      return next(new AppError('Authentication required', 401));
-    }
-
-    if (req.user.credits < minCredits) {
-      return next(new AppError('Insufficient credits', 402));
-    }
-
-    next();
-  };
-};
-
-// Rate limiting per user
-const userRateLimit = (maxRequests, windowMs) => {
-  const requests = new Map();
-
-  return (req, res, next) => {
-    if (!req.user) {
-      return next();
-    }
-
-    const userId = req.user.id;
-    const now = Date.now();
-    const windowStart = now - windowMs;
-
-    // Clean old entries
-    if (requests.has(userId)) {
-      const userRequests = requests.get(userId);
-      const validRequests = userRequests.filter(time => time > windowStart);
-      requests.set(userId, validRequests);
-    }
-
-    // Check rate limit
-    const userRequests = requests.get(userId) || [];
-    
-    if (userRequests.length >= maxRequests) {
-      logger.logSecurity('User rate limit exceeded', {
-        userId,
-        requests: userRequests.length,
-        maxRequests,
-        windowMs,
-        ip: req.ip
-      });
-      return next(new AppError('Rate limit exceeded', 429));
-    }
-
-    // Add current request
-    userRequests.push(now);
-    requests.set(userId, userRequests);
-
-    next();
-  };
-};
-
-// API key authentication (for external integrations)
-const authenticateApiKey = async (req, res, next) => {
+// API Key authentication for external integrations
+async function authenticateApiKey(req, res, next) {
   try {
     const apiKey = req.headers['x-api-key'];
-
+    
     if (!apiKey) {
-      return next(new AppError('API key required', 401));
+      return res.status(401).json({
+        status: "fail",
+        message: "API key required"
+      });
     }
 
-    // Hash the API key to compare with stored hash
-    const crypto = require('crypto');
-    const keyHash = crypto.createHash('sha256').update(apiKey).digest('hex');
-
-    const apiKeyRecord = await prisma.apiKey.findFirst({
+    // Find and verify API key
+    const keyRecord = await prisma.apiKey.findFirst({
       where: {
-        keyHash,
-        isActive: true
+        isActive: true,
+        expiresAt: { gt: new Date() }
+      },
+      include: {
+        user: {
+          select: { id: true, email: true, role: true, organizationId: true }
+        },
+        organization: {
+          select: { id: true, name: true }
+        }
       }
     });
 
-    if (!apiKeyRecord) {
-      logger.logSecurity('Invalid API key', {
-        keyHash: keyHash.substring(0, 8) + '...',
-        ip: req.ip,
-        userAgent: req.get('User-Agent')
+    if (!keyRecord) {
+      return res.status(401).json({
+        status: "fail",
+        message: "Invalid API key"
       });
-      return next(new AppError('Invalid API key', 401));
     }
 
-    // Update last used time
-    prisma.apiKey.update({
-      where: { id: apiKeyRecord.id },
-      data: { lastUsedAt: new Date() }
-    }).catch((error) => {
-      logger.error('Failed to update API key last used time:', error);
+    // Verify the API key hash
+    const { verifyApiKey } = require('../utils/encryption');
+    const isValid = await verifyApiKey(apiKey, keyRecord.keyHash);
+    
+    if (!isValid) {
+      return res.status(401).json({
+        status: "fail",
+        message: "Invalid API key"
+      });
+    }
+
+    // Update usage statistics
+    await prisma.apiKey.update({
+      where: { id: keyRecord.id },
+      data: {
+        lastUsedAt: new Date(),
+        lastUsedIp: req.ip,
+        usageCount: { increment: 1 }
+      }
     });
 
-    req.apiKey = apiKeyRecord;
+    req.user = {
+      sub: keyRecord.userId,
+      email: keyRecord.user?.email,
+      role: keyRecord.user?.role,
+      organizationId: keyRecord.organizationId || keyRecord.user?.organizationId
+    };
+    req.apiKey = keyRecord;
+    
+    next();
+
+  } catch (error) {
+    logger.error('API key authentication error:', error);
+    res.status(500).json({
+      status: "error",
+      message: "API authentication failed"
+    });
+  }
+}
+
+// Optional authentication (for public endpoints that benefit from user context)
+async function optionalAuth(req, res, next) {
+  try {
+    const authHeader = req.headers.authorization || "";
+    const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
+
+    if (token) {
+      const payload = await verifyToken(token);
+      if (payload) {
+        req.user = payload;
+      }
+    }
+    
     next();
   } catch (error) {
-    next(error);
+    logger.warn('Optional auth failed:', error);
+    next(); // Continue without authentication
   }
-};
+}
 
-// Check if user owns resource
-const checkResourceOwnership = (resourceModel, resourceIdParam = 'id') => {
-  return async (req, res, next) => {
-    try {
-      if (!req.user) {
-        return next(new AppError('Authentication required', 401));
+// Log security events
+async function logSecurityEvent(req, user) {
+  try {
+    const userAgent = req.headers['user-agent'];
+    const parser = new UAParser(userAgent);
+    const geo = geoip.lookup(req.ip);
+    
+    await prisma.securityAuditLog.create({
+      data: {
+        userId: user.id,
+        action: `${req.method} ${req.path}`,
+        result: 'success',
+        ipAddress: req.ip,
+        userAgent: userAgent,
+        location: geo ? `${geo.city}, ${geo.country}` : null,
+        details: JSON.stringify({
+          browser: parser.getBrowser(),
+          os: parser.getOS(),
+          device: parser.getDevice()
+        })
       }
-
-      const resourceId = req.params[resourceIdParam];
-      
-      if (!resourceId) {
-        return next(new AppError('Resource ID required', 400));
-      }
-
-      const resource = await prisma[resourceModel].findFirst({
-        where: {
-          id: resourceId,
-          userId: req.user.id,
-          deletedAt: null
-        }
-      });
-
-      if (!resource) {
-        return next(new AppError('Resource not found or access denied', 404));
-      }
-
-      req.resource = resource;
-      next();
-    } catch (error) {
-      next(error);
-    }
-  };
-};
+    });
+  } catch (error) {
+    logger.error('Failed to log security event:', error);
+  }
+}
 
 module.exports = {
-  generateAccessToken,
-  generateRefreshToken,
-  verifyToken,
   authenticate,
-  optionalAuth,
-  authorize,
-  requireSubscription,
-  requireCredits,
-  userRateLimit,
+  authenticateToken: authenticate,
   authenticateApiKey,
-  checkResourceOwnership
+  optionalAuth,
+  verifyToken
 };

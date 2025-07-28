@@ -1,8 +1,11 @@
 # Dependencies
 node_modules/
+*/node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
 
 # Environment variables
 .env
@@ -10,53 +13,58 @@ yarn-error.log*
 .env.development.local
 .env.test.local
 .env.production.local
-
-# Build outputs
-dist/
-build/
-.next/
-out/
+*.env
 
 # Database
 *.db
 *.sqlite
-pgdata/
+*.sqlite3
+prisma/dev.db
+database/
+*.db-journal
 
 # Logs
 logs/
 *.log
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Cache
-.cache/
-.npm/
-.yarn/
-
-# Temporary files
-tmp/
-temp/
-
-# Coverage reports
-coverage/
-.nyc_output/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
 
 # Runtime data
 pids/
 *.pid
 *.seed
 *.pid.lock
+.DS_Store
+Thumbs.db
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+.nyc_output/
+
+# Dependency directories
+jspm_packages/
+
+# TypeScript cache
+*.tsbuildinfo
 
 # Optional npm cache directory
 .npm
+
+# Optional eslint cache
+.eslintcache
+
+# Optional stylelint cache
+.stylelintcache
+
+# Microbundle cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
 
 # Optional REPL history
 .node_repl_history
@@ -66,3 +74,77 @@ pids/
 
 # Yarn Integrity file
 .yarn-integrity
+
+# parcel-bundler cache (https://parceljs.org/)
+.cache
+.parcel-cache
+
+# Next.js build output
+.next/
+out/
+build/
+dist/
+
+# Nuxt.js build / generate output
+.nuxt
+dist
+
+# Gatsby files
+.cache/
+public
+
+# Storybook build outputs
+.out
+.storybook-out
+
+# Temporary folders
+tmp/
+temp/
+
+# Editor directories and files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Docker
+.dockerignore
+docker-compose.override.yml
+
+# AI Platform specific
+/backend/uploads/
+/backend/logs/
+/frontend-next/.next/
+/frontend-next/out/
+*.zip
+*.tar.gz
+
+# MCP servers
+/mcp-servers/*/node_modules/
+/mcp-servers/*/.env
+
+# Test files
+/test-results/
+/playwright-report/
+/playwright/.cache/
+
+# Backup files
+*.backup
+*.bak
+*.tmp
+
+# Redis dump
+dump.rdb

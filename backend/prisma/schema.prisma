@@ -6,289 +6,210 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
-// Users table
 model User {
-  id                String   @id @default(cuid())
-  email             String   @unique
-  passwordHash      String   @map("password_hash")
-  firstName         String?  @map("first_name")
-  lastName          String?  @map("last_name")
-  role              Role     @default(USER)
-  credits           Int      @default(0)
-  subscriptionTier  SubscriptionTier @default(FREE) @map("subscription_tier")
-  isActive          Boolean  @default(true) @map("is_active")
-  emailVerified     Boolean  @default(false) @map("email_verified")
-  emailVerifiedAt   DateTime? @map("email_verified_at")
-  lastLoginAt       DateTime? @map("last_login_at")
-  createdAt         DateTime @default(now()) @map("created_at")
-  updatedAt         DateTime @updatedAt @map("updated_at")
-  deletedAt         DateTime? @map("deleted_at")
+  id                String          @id @default(cuid())
+  email             String          @unique
+  password          String
+  firstName         String?
+  lastName          String?
+  role              String          @default("USER")
+  organizationId    String?
+  mfaEnabled        Boolean         @default(false)
+  mfaSecret         String?
+  mfaBackupCodes    String?
+  emailVerified     Boolean         @default(false)
+  emailVerificationToken String?
+  passwordResetToken String?
+  passwordResetExpires DateTime?
+  lastLogin         DateTime?
+  loginAttempts     Int             @default(0)
+  lockUntil         DateTime?
+  preferences       String?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
 
-  // Relations
+  organization      Organization?   @relation(fields: [organizationId], references: [id])
   chatSessions      ChatSession[]
   mcpServers        McpServer[]
-  creditTransactions CreditTransaction[]
-  subscriptions     Subscription[]
-  refreshTokens     RefreshToken[]
-  auditLogs         AuditLog[]
+  apiKeys           ApiKey[]
+  securityEvents    SecurityEvent[]
+  toolExecutions    ToolExecution[]
 
   @@map("users")
 }
 
-// Roles enum
-enum Role {
-  USER
-  ADMIN
-  SUPER_ADMIN
-}
-
-// Subscription tiers enum
-enum SubscriptionTier {
-  FREE
-  PRO
-  BUSINESS
-  ENTERPRISE
-}
-
-// Chat sessions
-model ChatSession {
+model Organization {
   id            String   @id @default(cuid())
-  userId        String   @map("user_id")
-  title         String?
-  model         String
-  systemPrompt  String?  @map("system_prompt") @db.Text
-  contextData   Json?    @map("context_data")
-  totalTokens   Int      @default(0) @map("total_tokens")
-  totalCost     Int      @default(0) @map("total_cost")
-  isActive      Boolean  @default(true) @map("is_active")
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
-  deletedAt     DateTime? @map("deleted_at")
+  name          String
+  description   String?
+  plan          String   @default("FREE")
+  status        String   @default("ACTIVE")
+  settings      String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-  // Relations
-  user          User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  users         User[]
+  invitations   Invitation[]
+
+  @@map("organizations")
+}
+
+model Invitation {
+  id             String   @id @default(cuid())
+  email          String
+  role           String   @default("USER")
+  status         String   @default("PENDING")
+  token          String   @unique
+  expiresAt      DateTime
+  organizationId String
+  invitedBy      String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  @@map("invitations")
+}
+
+model ChatSession {
+  id            String    @id @default(cuid())
+  userId        String
+  title         String
+  model         String
+  totalTokens   Int       @default(0)
+  messageCount  Int       @default(0)
+  metadata      String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   messages      ChatMessage[]
-  creditTransactions CreditTransaction[]
+  toolExecutions ToolExecution[]
 
   @@map("chat_sessions")
 }
 
-// Chat messages
 model ChatMessage {
-  id              String    @id @default(cuid())
-  sessionId       String    @map("session_id")
-  role            MessageRole
-  content         String    @db.Text
-  metadata        Json?
-  tokenCount      Int?      @map("token_count")
-  costCredits     Int?      @map("cost_credits")
-  mcpToolCalls    Json?     @map("mcp_tool_calls")
-  createdAt       DateTime  @default(now()) @map("created_at")
+  id          String      @id @default(cuid())
+  sessionId   String
+  role        String
+  content     String
+  tokens      Int         @default(0)
+  model       String?
+  metadata    String?
+  createdAt   DateTime    @default(now())
 
-  // Relations
-  session         ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  session     ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@map("chat_messages")
 }
 
-// Message roles enum
-enum MessageRole {
-  USER
-  ASSISTANT
-  SYSTEM
-  TOOL
-}
-
-// MCP servers
 model McpServer {
-  id              String    @id @default(cuid())
-  userId          String    @map("user_id")
+  id              String        @id @default(cuid())
+  userId          String
   name            String
-  description     String?
-  command         String
-  args            Json      @default("[]")
-  env             Json      @default("{}")
-  enabled         Boolean   @default(true)
-  lastHealthCheck DateTime? @map("last_health_check")
-  healthStatus    HealthStatus @default(UNKNOWN) @map("health_status")
-  totalCalls      Int       @default(0) @map("total_calls")
-  lastUsedAt      DateTime? @map("last_used_at")
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
-  deletedAt       DateTime? @map("deleted_at")
+  type            String
+  url             String?
+  status          String        @default("STOPPED")
+  config          String
+  availableTools  String?
+  metrics         String?
+  lastError       String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 
-  // Relations
-  user            User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  toolCalls       McpToolCall[]
-  auditLogs       AuditLog[]
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  toolExecutions  ToolExecution[]
 
   @@map("mcp_servers")
 }
 
-// Health status enum
-enum HealthStatus {
-  HEALTHY
-  UNHEALTHY
-  UNKNOWN
-  CONNECTING
-  ERROR
-}
-
-// MCP tool calls log
-model McpToolCall {
+model ToolExecution {
   id            String    @id @default(cuid())
-  serverId      String    @map("server_id")
-  toolName      String    @map("tool_name")
-  parameters    Json
-  response      Json?
+  serverId      String
+  userId        String
+  sessionId     String?
+  toolName      String
+  parameters    String
+  result        String?
+  executionTime Int       @default(0)
   success       Boolean
-  errorMessage  String?   @map("error_message")
-  executionTime Int?      @map("execution_time")
-  createdAt     DateTime  @default(now()) @map("created_at")
+  error         String?
+  createdAt     DateTime  @default(now())
 
-  // Relations
-  server        McpServer @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  server        McpServer    @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  session       ChatSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
 
-  @@map("mcp_tool_calls")
+  @@map("tool_executions")
 }
 
-// Credit transactions
-model CreditTransaction {
-  id            String    @id @default(cuid())
-  userId        String    @map("user_id")
-  sessionId     String?   @map("session_id")
-  type          TransactionType
-  amount        Int
-  description   String?
-  metadata      Json?
-  stripePaymentIntentId String? @map("stripe_payment_intent_id")
-  createdAt     DateTime  @default(now()) @map("created_at")
-
-  // Relations
-  user          User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  session       ChatSession? @relation(fields: [sessionId], references: [id])
-
-  @@map("credit_transactions")
-}
-
-// Transaction types enum
-enum TransactionType {
-  PURCHASE
-  USAGE
-  REFUND
-  BONUS
-  SUBSCRIPTION_CREDIT
-}
-
-// Subscriptions
-model Subscription {
-  id                    String    @id @default(cuid())
-  userId                String    @map("user_id")
-  tier                  SubscriptionTier
-  status                SubscriptionStatus
-  creditsPerMonth       Int       @map("credits_per_month")
-  pricePerMonth         Decimal   @map("price_per_month") @db.Decimal(10, 2)
-  billingCycleStart     DateTime  @map("billing_cycle_start")
-  billingCycleEnd       DateTime  @map("billing_cycle_end")
-  stripeSubscriptionId  String?   @map("stripe_subscription_id")
-  stripeCustomerId      String?   @map("stripe_customer_id")
-  cancelledAt           DateTime? @map("cancelled_at")
-  createdAt             DateTime  @default(now()) @map("created_at")
-  updatedAt             DateTime  @updatedAt @map("updated_at")
-
-  // Relations
-  user                  User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("subscriptions")
-}
-
-// Subscription status enum
-enum SubscriptionStatus {
-  ACTIVE
-  CANCELLED
-  EXPIRED
-  PAST_DUE
-  PAUSED
-}
-
-// Refresh tokens
-model RefreshToken {
-  id        String   @id @default(cuid())
-  userId    String   @map("user_id")
-  token     String   @unique
-  expiresAt DateTime @map("expires_at")
-  createdAt DateTime @default(now()) @map("created_at")
-  revokedAt DateTime? @map("revoked_at")
-
-  // Relations
-  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("refresh_tokens")
-}
-
-// Audit logs
-model AuditLog {
-  id          String    @id @default(cuid())
-  userId      String?   @map("user_id")
-  serverId    String?   @map("server_id")
-  action      String
-  entity      String
-  entityId    String?   @map("entity_id")
-  oldData     Json?     @map("old_data")
-  newData     Json?     @map("new_data")
-  ipAddress   String?   @map("ip_address")
-  userAgent   String?   @map("user_agent")
-  createdAt   DateTime  @default(now()) @map("created_at")
-
-  // Relations
-  user        User? @relation(fields: [userId], references: [id])
-  server      McpServer? @relation(fields: [serverId], references: [id])
-
-  @@map("audit_logs")
-}
-
-// Prompt templates
-model PromptTemplate {
-  id          String    @id @default(cuid())
-  name        String
-  description String?
-  content     String    @db.Text
-  category    String?
-  tags        String[]
-  isPublic    Boolean   @default(false) @map("is_public")
-  usageCount  Int       @default(0) @map("usage_count")
-  rating      Decimal?  @db.Decimal(3, 2)
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
-
-  @@map("prompt_templates")
-}
-
-// API keys for external services
 model ApiKey {
   id          String    @id @default(cuid())
+  userId      String
   name        String
-  provider    String    // claude, openai, gemini, etc.
-  keyHash     String    @map("key_hash")
-  isActive    Boolean   @default(true) @map("is_active")
-  lastUsedAt  DateTime? @map("last_used_at")
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
+  key         String    @unique
+  permissions String?
+  lastUsed    DateTime?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("api_keys")
 }
 
-// System settings
-model SystemSetting {
-  id          String    @id @default(cuid())
-  key         String    @unique
-  value       Json
-  description String?
-  updatedAt   DateTime  @updatedAt @map("updated_at")
+model SecurityEvent {
+  id          String   @id @default(cuid())
+  userId      String
+  type        String
+  description String
+  ipAddress   String?
+  userAgent   String?
+  metadata    String?
+  createdAt   DateTime @default(now())
 
-  @@map("system_settings")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("security_events")
 }
+
+model SystemMetrics {
+  id          String    @id @default(cuid())
+  type        String    // cpu, memory, disk, network, etc.
+  value       Float
+  unit        String    // percentage, bytes, etc.
+  metadata    String?
+  timestamp   DateTime  @default(now())
+
+  @@map("system_metrics")
+}
+
+model AuditLog {
+  id          String    @id @default(cuid())
+  userId      String?
+  action      String
+  resource    String
+  resourceId  String?
+  changes     String?
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime  @default(now())
+
+  @@map("audit_logs")
+}
+
+// Note: SQLite doesn't support enums, so we use String fields with default values
+// Valid values for role: "USER", "ADMIN", "SUPER_ADMIN"
+// Valid values for plan: "FREE", "PRO", "ENTERPRISE"
+// Valid values for organizationStatus: "ACTIVE", "SUSPENDED", "PENDING"
+// Valid values for invitationStatus: "PENDING", "ACCEPTED", "EXPIRED", "CANCELLED"
+// Valid values for messageRole: "USER", "ASSISTANT", "SYSTEM"
+// Valid values for serverType: "DOCKER", "PROCESS", "REMOTE"
+// Valid values for serverStatus: "STOPPED", "STARTING", "RUNNING", "ERROR", "STOPPING"
+// Valid values for securityEventType: "LOGIN_SUCCESS", "LOGIN_FAILURE", "LOGOUT", "PASSWORD_CHANGE", "MFA_ENABLED", "MFA_DISABLED", "API_KEY_CREATED", "API_KEY_DELETED", "SUSPICIOUS_ACTIVITY", "ACCOUNT_LOCKED"
