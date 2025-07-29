@@ -1,11 +1,21 @@
 'use client';
 
 // הגדרת Base URL עבור ה-API
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+// בפרודקשן (static), נשתמש במצב demo ללא שרת
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || (
+  typeof window !== 'undefined' && window.location.hostname !== 'localhost' 
+    ? '/api' // Static mode - will be handled by mock responses
+    : 'http://localhost:3001' // Development mode
+);
+
+// Check if we're in static/demo mode
+const isStaticMode = typeof window !== 'undefined' && 
+  (window.location.hostname !== 'localhost' && !API_BASE_URL.startsWith('http'));
 
 // Debug info
-if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+if (typeof window !== 'undefined') {
   console.log('API Base URL:', API_BASE_URL);
+  console.log('Static Mode:', isStaticMode);
 }
 
 // Types עבור API responses
@@ -101,6 +111,15 @@ async function makeRequest<T>(
 
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
+      // Check if we're in static mode and return mock response
+      if (isStaticMode) {
+        // Simulate network delay
+        await new Promise(resolve => setTimeout(resolve, 300 + Math.random() * 500));
+        const mockData = getMockResponse(url, method, body);
+        console.log(`[DEMO MODE] Returning mock response:`, mockData);
+        return mockData;
+      }
+
       // Request interceptor
       console.log(`[API Request] ${method} ${fullUrl}`, { headers: requestHeaders, body });
 
@@ -152,6 +171,147 @@ function shouldNotRetry(error: any): boolean {
     return status >= 400 && status < 500 && status !== 408 && status !== 429;
   }
   return false;
+}
+
+// Mock responses for static/demo mode
+function getMockResponse(url: string, method: string, body?: any): any {
+  console.log(`[DEMO MODE] Mock response for ${method} ${url}`);
+  
+  // Health check
+  if (url.includes('/health')) {
+    return { status: 'healthy', mode: 'demo' };
+  }
+  
+  // Auth endpoints
+  if (url.includes('/auth/login')) {
+    return {
+      success: true,
+      data: {
+        token: 'demo-token-12345',
+        user: {
+          id: '1',
+          email: body?.email || 'demo@example.com',
+          firstName: 'Demo',
+          lastName: 'User',
+          role: 'USER'
+        }
+      }
+    };
+  }
+  
+  if (url.includes('/auth/me')) {
+    return {
+      success: true,
+      data: {
+        id: '1',
+        email: 'demo@example.com',
+        firstName: 'Demo',
+        lastName: 'User',
+        role: 'USER'
+      }
+    };
+  }
+  
+  // Chat endpoints
+  if (url.includes('/chat/sessions') && method === 'GET') {
+    return {
+      success: true,
+      data: [
+        {
+          id: 'demo-session-1',
+          title: 'שאלה לדוגמה על תכנון ובנייה',
+          model: 'gemini-1.5-flash',
+          messageCount: 4,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }
+      ]
+    };
+  }
+  
+  if (url.includes('/chat/message')) {
+    return {
+      success: true,
+      data: {
+        session: {
+          id: 'demo-session-1',
+          title: 'שיחה חדשה'
+        },
+        userMessage: {
+          id: 'msg-' + Date.now(),
+          role: 'user',
+          content: body?.message || 'שאלה לדוגמה',
+          createdAt: new Date().toISOString()
+        },
+        assistantMessage: {
+          id: 'msg-' + (Date.now() + 1),
+          role: 'assistant',
+          content: `🎯 **מצב Demo פעיל**
+
+זהו מצב הדגמה של פלטפורמת ה-AI. במצב זה:
+
+✅ **מה שעובד:**
+- ממשק המשתמש מלא
+- ניווט בין דפים
+- עיצוב ותכונות UI
+
+⚠️ **מה שלא עובד (זמנית):**
+- חיבור לשרת AI אמיתי
+- שמירת נתונים
+- כלי MCP ותכנון ישראלי
+
+📋 **להפעלה מלאה:**
+צריך להעלות גם את השרת (Backend) לשירות כמו Railway או Heroku.
+
+💡 **שאלתך:** "${body?.message || 'שאלה לדוגמה'}"
+
+במצב מלא, הייתי עונה עם:
+- חיבור לכלי תכנון ישראלי
+- מידע מעודכן על בנייה ותכנון
+- שילוב עם מודלי AI מתקדמים
+
+האתר עובד! רק צריך לחבר את השרת לפונקציונליות מלאה. 🚀`,
+          createdAt: new Date().toISOString()
+        }
+      }
+    };
+  }
+  
+  if (url.includes('/chat/models')) {
+    return {
+      success: true,
+      data: {
+        models: [
+          { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash', isDefault: true },
+          { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro', isDefault: false }
+        ],
+        default: 'gemini-1.5-flash'
+      }
+    };
+  }
+  
+  // MCP endpoints
+  if (url.includes('/mcp') && method === 'GET') {
+    return {
+      success: true,
+      data: [
+        {
+          id: 'demo-mcp-1',
+          name: 'מינהל התכנון הישראלי',
+          description: 'כלים לחיפוש מידע על תכנון ובנייה בישראל',
+          enabled: true,
+          status: 'demo',
+          healthStatus: 'DEMO_MODE'
+        }
+      ]
+    };
+  }
+  
+  // Default response
+  return {
+    success: true,
+    data: { message: 'Demo response', mode: 'static' }
+  };
 }
 
 // API Functions
