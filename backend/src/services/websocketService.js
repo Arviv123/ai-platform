@@ -44,7 +44,7 @@ class WebSocketService {
         return false;
       }
 
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'dev-secret');
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production');
       
       // Add user info to request for later use
       info.req.user = decoded;

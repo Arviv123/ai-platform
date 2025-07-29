@@ -3,7 +3,7 @@ const cors = require('cors');
 const axios = require('axios');
 const fs = require('fs-extra');
 const cheerio = require('cheerio');
-const fetch = require('node-fetch');
+// const fetch = require('node-fetch'); // Will use axios instead
 const { v4: uuidv4 } = require('uuid');
 const moment = require('moment');
 const sharp = require('sharp');
@@ -11,6 +11,17 @@ const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 8080;
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('🛑 Received SIGTERM, shutting down gracefully...');
+  process.exit(0);
+});
+
+process.on('SIGINT', () => {
+  console.log('🛑 Received SIGINT, shutting down gracefully...');
+  process.exit(0);
+});
 
 // Middleware
 app.use(cors());
@@ -782,15 +793,274 @@ async function executeDateTimeHelper(params) {
   }
 }
 
+// In-memory conversation storage (in production, use a database)
+const conversations = new Map();
+
+// Conversation Management Endpoints
+app.post('/conversations', (req, res) => {
+  const conversationId = uuidv4();
+  const conversation = {
+    id: conversationId,
+    created: new Date().toISOString(),
+    lastUpdated: new Date().toISOString(),
+    messages: [],
+    metadata: req.body.metadata || {}
+  };
+  
+  conversations.set(conversationId, conversation);
+  
+  res.json({
+    success: true,
+    conversation: {
+      id: conversation.id,
+      created: conversation.created,
+      metadata: conversation.metadata
+    }
+  });
+});
+
+app.get('/conversations/:id', (req, res) => {
+  const { id } = req.params;
+  const conversation = conversations.get(id);
+  
+  if (!conversation) {
+    return res.status(404).json({
+      success: false,
+      error: 'Conversation not found'
+    });
+  }
+  
+  res.json({
+    success: true,
+    conversation
+  });
+});
+
+app.post('/conversations/:id/messages', (req, res) => {
+  const { id } = req.params;
+  const { role, content, toolCalls, metadata } = req.body;
+  
+  if (!role || !content) {
+    return res.status(400).json({
+      success: false,
+      error: 'Role and content are required'
+    });
+  }
+  
+  const conversation = conversations.get(id);
+  if (!conversation) {
+    return res.status(404).json({
+      success: false,
+      error: 'Conversation not found'
+    });
+  }
+  
+  const message = {
+    id: uuidv4(),
+    role,
+    content,
+    toolCalls: toolCalls || [],
+    timestamp: new Date().toISOString(),
+    metadata: metadata || {}
+  };
+  
+  conversation.messages.push(message);
+  conversation.lastUpdated = new Date().toISOString();
+  
+  res.json({
+    success: true,
+    message: {
+      id: message.id,
+      role: message.role,
+      content: message.content,
+      timestamp: message.timestamp
+    }
+  });
+});
+
+app.get('/conversations/:id/messages', (req, res) => {
+  const { id } = req.params;
+  const { limit = 50, offset = 0 } = req.query;
+  
+  const conversation = conversations.get(id);
+  if (!conversation) {
+    return res.status(404).json({
+      success: false,
+      error: 'Conversation not found'
+    });
+  }
+  
+  const messages = conversation.messages
+    .slice(parseInt(offset), parseInt(offset) + parseInt(limit));
+  
+  res.json({
+    success: true,
+    messages,
+    total: conversation.messages.length,
+    limit: parseInt(limit),
+    offset: parseInt(offset)
+  });
+});
+
+app.get('/conversations', (req, res) => {
+  const { limit = 20, offset = 0 } = req.query;
+  
+  const allConversations = Array.from(conversations.values())
+    .sort((a, b) => new Date(b.lastUpdated) - new Date(a.lastUpdated))
+    .slice(parseInt(offset), parseInt(offset) + parseInt(limit))
+    .map(conv => ({
+      id: conv.id,
+      created: conv.created,
+      lastUpdated: conv.lastUpdated,
+      messageCount: conv.messages.length,
+      metadata: conv.metadata
+    }));
+  
+  res.json({
+    success: true,
+    conversations: allConversations,
+    total: conversations.size,
+    limit: parseInt(limit),
+    offset: parseInt(offset)
+  });
+});
+
+app.delete('/conversations/:id', (req, res) => {
+  const { id } = req.params;
+  
+  if (!conversations.has(id)) {
+    return res.status(404).json({
+      success: false,
+      error: 'Conversation not found'
+    });
+  }
+  
+  conversations.delete(id);
+  
+  res.json({
+    success: true,
+    message: 'Conversation deleted successfully'
+  });
+});
+
+// Enhanced MCP execution with conversation context
+app.post('/conversations/:id/execute', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { tool, parameters, role = 'assistant', saveToHistory = true } = req.body;
+
+    if (!tool || !parameters) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tool name or parameters'
+      });
+    }
+
+    const conversation = conversations.get(id);
+    if (!conversation) {
+      return res.status(404).json({
+        success: false,
+        error: 'Conversation not found'
+      });
+    }
+
+    let result;
+    const startTime = Date.now();
+
+    // Execute the tool (same logic as before)
+    switch (tool) {
+      case 'web_scraper':
+        result = await executeWebScraper(parameters);
+        break;
+      case 'file_manager':
+        result = await executeFileManager(parameters);
+        break;
+      case 'image_processor':
+        result = await executeImageProcessor(parameters);
+        break;
+      case 'http_client':
+        result = await executeHttpClient(parameters);
+        break;
+      case 'data_analyzer':
+        result = await executeDataAnalyzer(parameters);
+        break;
+      case 'text_processor':
+        result = await executeTextProcessor(parameters);
+        break;
+      case 'datetime_helper':
+        result = await executeDateTimeHelper(parameters);
+        break;
+      default:
+        return res.status(400).json({
+          success: false,
+          error: `Unknown tool: ${tool}`
+        });
+    }
+
+    const executionTime = Date.now() - startTime;
+    const toolCallResult = {
+      success: true,
+      result,
+      metadata: {
+        tool,
+        executionTime,
+        timestamp: new Date().toISOString()
+      }
+    };
+
+    // Save to conversation history if requested
+    if (saveToHistory) {
+      const message = {
+        id: uuidv4(),
+        role,
+        content: `Used tool: ${tool}`,
+        toolCalls: [{
+          tool,
+          parameters,
+          result,
+          executionTime
+        }],
+        timestamp: new Date().toISOString(),
+        metadata: { toolExecution: true }
+      };
+      
+      conversation.messages.push(message);
+      conversation.lastUpdated = new Date().toISOString();
+    }
+
+    res.json(toolCallResult);
+
+  } catch (error) {
+    console.error('Tool execution error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 // Ensure data directory exists
 fs.ensureDirSync('./data');
 
 // Start server
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`🤖 AI Platform MCP Server running on port ${PORT}`);
   console.log(`📊 Health check: http://localhost:${PORT}/health`);
   console.log(`🔧 Tools: http://localhost:${PORT}/mcp/tools`);
+  console.log(`💬 Conversations: http://localhost:${PORT}/conversations`);
   console.log(`💡 Ready to process MCP tool requests!`);
+  console.log(`⚡ Server started at ${new Date().toISOString()}`);
+});
+
+// Handle server errors
+server.on('error', (error) => {
+  if (error.code === 'EADDRINUSE') {
+    console.error(`❌ Port ${PORT} is already in use. Please use a different port or stop existing servers.`);
+    process.exit(1);
+  } else {
+    console.error('❌ Server error:', error);
+    process.exit(1);
+  }
 });
 
 module.exports = app;

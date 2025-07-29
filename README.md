@@ -1,164 +1,133 @@
-# 🤖 AI Platform - פלטפורמת בינה מלאכותית מתקדמת
+# 🚀 AI Platform - Quick Start
 
-פלטפורמה מלאה לניהול ושימוש במודלי בינה מלאכותית עם תמיכה ב-MCP, מערכת חיובים ומנויים.
+## 🔧 First Time Setup (5 minutes)
 
-## ✨ תכונות עיקריות
+**If this is your first time, run this first:**
+```
+setup.bat
+```
 
-### 🔮 AI Models Support
-- Claude 3 (Sonnet & Haiku)
-- GPT-4 & GPT-3.5 Turbo  
+## ⚡ Quick Start (30 seconds)
+
+**After setup, just double-click:**
+```
+start.bat
+```
+
+The system will start automatically and open your browser!
+
+## 🛑 To Stop
+
+**Double-click this file:**
+```
+stop.bat
+```
+
+## 🌐 System URLs
+
+- **Frontend**: http://localhost:3000
+- **Backend**: http://localhost:3001
+- **MCP Server**: http://localhost:8080-8082
+
+## 👤 Login Credentials
+
+### Admin
+- **Email**: admin@platform.com
+- **Password**: admin123
+
+### Users
+- **User 1**: user1@example.com / demo123
+- **User 2**: user2@demo.com / demo123
+- **User 3**: test@platform.com / demo123
+
+## 🛠️ What's Included
+
+### 🤖 AI Models
+- Claude (Sonnet & Haiku)
+- GPT-4 & GPT-3.5 Turbo
 - Gemini Pro
 
-### 💰 מערכת מונטיזציה
-- מנויים חודשיים (חינם, בסיסי, פרימיום, ארגוני)
-- רכישת קרדיטים עם מחירים מדורגים
-- אינטגרציה עם Stripe לתשלומים
+### 🔧 MCP Tools
+1. **Web Scraper** - Extract content from websites
+2. **File Manager** - Manage server files
+3. **Image Processor** - Resize, convert images
+4. **HTTP Client** - Make API requests
+5. **Data Analyzer** - Analyze JSON/CSV data
+6. **Text Processor** - Process and analyze text
+7. **DateTime Helper** - Date/time operations
 
-### 🔌 MCP Integration
-- חיבור שרתי MCP חיצוניים
-- ניהול מחזור חיים של שרתים
-- מעקב בריאות ולוגים
+### 🏗️ Israeli Planning Tools
+- Search planning projects
+- Get specific project details
+- Check building restrictions
+- Location-based information
 
-### 👥 ניהול משתמשים
-- דשבורד ניהול מלא
-- פאנל משתמשים עם CRUD מלא
-- מעקב פעילות ואנליטיקס
+## 💬 Example Questions
 
-## 🚀 התקנה והפעלה
+### Planning & Construction
+```
+"Search for projects in Tel Aviv"
+"What are the building restrictions on Dizengoff Street?"
+"Give me details about project 101-0123456"
+```
 
-### דרישות מערכת
-- Node.js 20+
-- npm או yarn
-- Git
+### Web & Data
+```
+"Check what's on this website: https://example.com"
+"Analyze this text for sentiment"
+"Count words in this document"
+```
 
-### התקנה מהירה
+### Images & Files
+```
+"Resize image to 800x600"
+"Convert image to PNG format"
+"Compress this image"
+```
 
-1. **קלון הפרויקט:**
-   ```bash
-   git clone https://github.com/[username]/ai-platform.git
-   cd ai-platform
-   ```
+## 🔧 Troubleshooting
 
-2. **התקנת תלויות Backend:**
-   ```bash
-   cd backend
-   npm install
-   ```
+### System not responding
+```
+1. Run: stop.bat
+2. Wait 10 seconds
+3. Run: start.bat
+```
 
-3. **התקנת תלויות Frontend:**
-   ```bash
-   cd ../frontend-next
-   npm install
-   ```
+### Port conflicts
+```
+cd mcp-server-example
+npm run force-restart
+```
 
-4. **הגדרת מסד נתונים:**
-   ```bash
-   cd ../backend
-   npm run db:generate
-   npm run db:migrate
-   npm run db:seed
-   ```
+### Check status
+```
+cd mcp-server-example
+npm run status
+npm run logs
+```
 
-5. **הפעלת השרתים:**
-   ```bash
-   # מהתיקייה הראשית
-   ./start-servers.bat
-   # או באופן ידני:
-   # Backend: cd backend && npm run dev
-   # Frontend: cd frontend-next && npm run dev
-   ```
-
-### כתובות השרתים
-- **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:3004
-- **API Documentation**: http://localhost:3004/api
-- **Health Check**: http://localhost:3004/health
-
-## 👥 משתמשי בדיקה
-
-### מנהל מערכת:
-- **אימייל**: `admin@platform.com`
-- **סיסמה**: `admin123`
-
-### משתמשי דמו:
-- **אימייל**: `user1@example.com` | **סיסמה**: `demo123`
-- **אימייל**: `test@platform.com` | **סיסמה**: `demo123`
-
-## 🔧 API Endpoints
-
-- GET /health - בדיקת תקינות
-- GET /api - תיעוד API
-- POST /api/auth/register - הרשמה
-- POST /api/chat - צ'אט עם AI
-- GET /api/user - ניהול משתמשים
-
-## 💳 מנויים ותמחור
-
-| תוכנית | מחיר | קרדיטים | תכונות |
-|---------|------|----------|---------|
-| חינם | ₪0 | 100 | צ'אט בסיסי |
-| בסיסי | ₪29 | 1,000 | כל המודלים |
-| פרימיום | ₪99 | 5,000 | MCP + תמיכה |
-| ארגוני | ₪299 | 20,000 | API + תמיכה 24/7 |
-
----
-
-**הפלטפורמה מוכנה לשימוש\! 🎉**
-
-## 🛠️ מבנה הפרויקט
+## 📂 Project Structure
 
 ```
 ai-platform/
-├── backend/                 # שרת Node.js + Express
-│   ├── src/
-│   │   ├── controllers/     # בקרים
-│   │   ├── routes/         # נתיבי API
-│   │   ├── services/       # שירותים
-│   │   ├── middleware/     # middleware
-│   │   └── utils/          # כלי עזר
-│   ├── prisma/             # סכימת מסד נתונים
-│   └── package.json
-├── frontend-next/          # ממשק משתמש Next.js
-│   ├── src/
-│   │   ├── app/           # דפי האפליקציה
-│   │   ├── components/    # רכיבי React
-│   │   ├── contexts/      # Context providers
-│   │   └── hooks/         # Custom hooks
-│   └── package.json
-├── mcp-servers/           # שרתי MCP
-├── docker-compose.yml     # הגדרות Docker
-└── start-servers.bat      # הפעלת השרתים
-
+├── start.bat                  ← START HERE
+├── stop.bat                   ← STOP HERE
+├── README.md                  ← This file
+├── backend/                   ← API Server
+├── frontend-next/             ← Web Interface
+├── mcp-server-example/        ← Tools Server
+└── mcp-servers/              ← Planning Tools
 ```
 
-## 🔥 תכונות מתקדמות
+## 🎯 Getting Started
 
-### ⚡ מערכת ניהול שגיאות מתקדמת
-- **Error Boundary** - תפיסת שגיאות React
-- **Global Error Context** - ניהול שגיאות גלובלי
-- **API Error Handling** - טיפול חכם בשגיאות API
-- **User-Friendly Messages** - הודעות ברורות בעברית
-- **Retry Logic** - ניסיון חוזר אוטומטי
-
-### 🔐 אבטחה ואימות
-- **JWT Authentication** - אימות מבוסס טוקנים
-- **Password Hashing** - הצפנת סיסמאות עם bcrypt
-- **Rate Limiting** - הגבלת קצב בקשות
-- **CORS Protection** - הגנת CORS
-- **Input Validation** - וולידציה של קלטים
-
-### 📊 ניטור וביצועים
-- **Health Checks** - בדיקות תקינות
-- **Logging System** - מערכת לוגים מתקדמת
-- **Error Tracking** - מעקב שגיאות
-- **Performance Monitoring** - ניטור ביצועים
-
-🔗 **קישורים מהירים:**
-- **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:3004
-- **API Documentation**: http://localhost:3004/api
-- **Health Check**: http://localhost:3004/health
+1. **Double-click**: `start.bat`
+2. **Wait**: System will start (30 seconds)
+3. **Browser opens**: http://localhost:3000
+4. **Login**: Use credentials above
+5. **Start chatting**: Ask questions!
 
 ---
 
-**המערכת מוכנה לשימוש ופריסה!** 🚀
+**The system is ready to use!** 🚀

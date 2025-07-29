@@ -42,13 +42,14 @@ class MCPService extends EventEmitter {
     try {
       const servers = await prisma.mcpServer.findMany({
         where: { 
-          status: 'RUNNING'
+          enabled: true,
+          deletedAt: null
         }
       });
       
       for (const server of servers) {
-        // Auto-start running servers
-        if (server.status === 'RUNNING') {
+        // Auto-start enabled servers
+        if (server.enabled && server.healthStatus === 'HEALTHY') {
           try {
             await this.startServer(server.id);
           } catch (error) {
@@ -138,12 +139,13 @@ class MCPService extends EventEmitter {
         data: {
           userId,
           name,
-          description,
+          description: description || '',
           command,
           args: JSON.stringify(args),
           env: JSON.stringify(env),
           enabled,
-          healthStatus: 'UNKNOWN'
+          healthStatus: 'UNKNOWN',
+          totalCalls: 0
         }
       });
 
@@ -240,25 +242,33 @@ class MCPService extends EventEmitter {
       // Update status to starting
       await this.updateServerStatus(serverId, 'STARTING');
       
-      // Spawn the MCP server process
-      const process = spawn(server.command, args, {
+      // Spawn the MCP server process with Windows compatibility
+      const isWindows = process.platform === 'win32';
+      const spawnOptions = {
         env: { ...process.env, ...env },
         stdio: ['pipe', 'pipe', 'pipe'],
         detached: false
-      });
+      };
+      
+      // On Windows, add shell option for better compatibility
+      if (isWindows) {
+        spawnOptions.shell = true;
+      }
+      
+      const childProcess = spawn(server.command, args, spawnOptions);
       
       // Store process reference
-      this.serverProcesses.set(serverId, process);
+      this.serverProcesses.set(serverId, childProcess);
       
       // Setup process event handlers
-      this.setupProcessHandlers(serverId, process);
+      this.setupProcessHandlers(serverId, childProcess);
       
       logger.info(`MCP server ${serverId} starting...`);
       
       // Wait for server to initialize
-      await this.waitForServerReady(serverId, process);
+      await this.waitForServerReady(serverId, childProcess);
       
-      return process;
+      return childProcess;
     } catch (error) {
       logger.error(`Error starting MCP server ${serverId}:`, error);
       await this.updateServerStatus(serverId, 'ERROR');
@@ -266,23 +276,43 @@ class MCPService extends EventEmitter {
     }
   }
 
-  // Stop MCP server process
+  // Stop MCP server process with Windows compatibility
   async stopServer(serverId) {
     try {
-      const process = this.serverProcesses.get(serverId);
+      const childProcess = this.serverProcesses.get(serverId);
       
-      if (!process) {
+      if (!childProcess) {
         logger.warn(`Server ${serverId} is not running`);
         return;
       }
       
+      const isWindows = process.platform === 'win32';
+      
       // Graceful shutdown
-      process.kill('SIGTERM');
+      if (isWindows) {
+        // On Windows, use taskkill for better process termination
+        try {
+          exec(`taskkill /pid ${childProcess.pid} /t /f`, (error) => {
+            if (error) {
+              logger.warn(`Failed to kill process tree for ${serverId}:`, error);
+            }
+          });
+        } catch (error) {
+          logger.warn(`Taskkill failed for ${serverId}, falling back to kill()`, error);
+          childProcess.kill('SIGTERM');
+        }
+      } else {
+        childProcess.kill('SIGTERM');
+      }
       
       // Force kill after timeout
       setTimeout(() => {
-        if (!process.killed) {
-          process.kill('SIGKILL');
+        if (!childProcess.killed) {
+          if (isWindows) {
+            exec(`taskkill /pid ${childProcess.pid} /t /f`);
+          } else {
+            childProcess.kill('SIGKILL');
+          }
         }
       }, 10000);
       
@@ -660,6 +690,7 @@ class MCPService extends EventEmitter {
           lastHealthCheck: new Date()
         }
       });
+      logger.info(`Server ${serverId} status updated to: ${status}`);
     } catch (error) {
       logger.error(`Error updating server ${serverId} status:`, error);
     }
@@ -689,20 +720,38 @@ class MCPService extends EventEmitter {
     }
   }
 
-  // Validate server configuration
+  // Validate server configuration with better Windows support
   async validateServerConfig(command, args, env) {
-    // For Windows compatibility, check if command exists
     return new Promise((resolve, reject) => {
-      exec(`where ${command}`, (error) => {
+      const isWindows = process.platform === 'win32';
+      const checkCommand = isWindows ? `where "${command}"` : `which "${command}"`;
+      
+      exec(checkCommand, (error, stdout, stderr) => {
         if (error) {
-          // Try 'which' for Unix-like systems
-          exec(`which ${command}`, (error2) => {
-            if (error2) {
-              reject(new Error(`Command '${command}' not found`));
-            } else {
+          // For Windows, also try looking in common paths
+          if (isWindows) {
+            const commonPaths = [
+              'C:\\Program Files\\nodejs\\',
+              'C:\\Program Files (x86)\\nodejs\\',
+              process.env.APPDATA ? `${process.env.APPDATA}\\npm\\` : ''
+            ].filter(Boolean);
+            
+            const fullCommand = commonPaths.find(path => {
+              try {
+                require('fs').accessSync(`${path}${command}.exe`);
+                return true;
+              } catch {
+                return false;
+              }
+            });
+            
+            if (fullCommand) {
               resolve(true);
+              return;
             }
-          });
+          }
+          
+          reject(new Error(`Command '${command}' not found. Make sure it's installed and in your PATH.`));
         } else {
           resolve(true);
         }

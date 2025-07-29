@@ -28,7 +28,7 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
@@ -39,7 +39,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Get token from localStorage
   const getToken = () => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('auth_token');
+      return localStorage.getItem('authToken') || localStorage.getItem('auth_token');
     }
     return null;
   };
@@ -47,14 +47,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Set token in localStorage
   const setToken = (token: string) => {
     if (typeof window !== 'undefined') {
-      localStorage.setItem('auth_token', token);
+      localStorage.setItem('authToken', token);
+      // Remove old token key for migration
+      localStorage.removeItem('auth_token');
     }
   };
 
   // Remove token from localStorage
   const removeToken = () => {
     if (typeof window !== 'undefined') {
-      localStorage.removeItem('auth_token');
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('auth_token'); // Remove old key too
     }
   };
 
@@ -91,10 +94,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
         return;
       }
 
-      const response = await apiCall('/api/user/profile');
+      const response = await apiCall('/api/auth/me');
       if (response.ok) {
         const data = await response.json();
-        setUser(data.data.user);
+        if (data.status === 'success') {
+          setUser(data.user);
+        } else {
+          removeToken();
+        }
       } else {
         removeToken();
       }
@@ -120,7 +127,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       const data = await response.json();
 
-      if (response.ok) {
+      if (response.ok && data.status === 'success') {
         if (data.requireMfa) {
           return { success: false, requiresMfa: true };
         }
@@ -155,13 +162,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
           email, 
           password, 
           firstName, 
-          lastName 
+          lastName,
+          agreeTerms: true
         }),
       });
 
       const data = await response.json();
 
-      if (response.ok) {
+      if (response.ok && data.status === 'success') {
         setToken(data.accessToken);
         setUser(data.user);
         return { success: true };

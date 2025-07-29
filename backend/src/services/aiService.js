@@ -2,6 +2,8 @@ const Anthropic = require('@anthropic-ai/sdk');
 const OpenAI = require('openai');
 const logger = require('../utils/logger');
 const { AppError } = require('../middleware/errorHandler');
+const mcpService = require('./mcpService');
+const IsraeliPlanningService = require('./israeliPlanningService');
 
 // Initialize AI clients
 const anthropic = new Anthropic({
@@ -11,6 +13,9 @@ const anthropic = new Anthropic({
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
+
+// Initialize Israeli Planning Service
+const israeliPlanningService = new IsraeliPlanningService();
 
 // Google AI will be added later
 
@@ -382,12 +387,166 @@ const validateModel = (model) => {
   return config;
 };
 
+// Get available Israeli planning tools
+const getAvailablePlanningTools = () => {
+  try {
+    return israeliPlanningService.getAvailableTools();
+  } catch (error) {
+    logger.error('Error getting planning tools:', error);
+    return [];
+  }
+};
+
+// Execute Israeli planning tool
+const executePlanningTool = async (toolName, parameters) => {
+  try {
+    logger.info(`Executing planning tool: ${toolName} with parameters:`, parameters);
+    
+    const result = await israeliPlanningService.executeTool(toolName, parameters);
+    
+    return {
+      success: true,
+      content: result,
+      data: result
+    };
+  } catch (error) {
+    logger.error(`Error executing planning tool ${toolName}:`, error);
+    return {
+      success: false,
+      error: error.message,
+      content: `שגיאה בהפעלת הכלי ${toolName}: ${error.message}`
+    };
+  }
+};
+
+// Enhanced chat completion with Israeli planning tools
+const generateChatCompletionWithTools = async (model, messages, userId, options = {}) => {
+  try {
+    // Get available planning tools
+    const availableTools = getAvailablePlanningTools();
+    
+    if (availableTools.length === 0) {
+      // No planning tools available, use regular completion
+      return await generateChatCompletion(model, messages, options);
+    }
+
+    // Check if the user's message is related to Israeli planning
+    const lastMessage = messages[messages.length - 1];
+    const planningKeywords = ['תכנית', 'בנייה', 'מיקום', 'תכנון', 'ייעוד', 'מינהל התכנון', 'קואורדינטות', 'מחוז', 'עיר', 'דונם', 'מגורים', 'מסחר', 'תעשיה'];
+    const isPlanningRelated = planningKeywords.some(keyword => 
+      lastMessage.content.includes(keyword)
+    );
+
+    if (!isPlanningRelated) {
+      // Not planning related, use regular completion
+      return await generateChatCompletion(model, messages, options);
+    }
+
+    // Add system message about available tools
+    const toolsDescription = availableTools.map(tool => 
+      `- ${tool.name}: ${tool.description}`
+    ).join('\n');
+
+    const systemMessage = {
+      role: 'system',
+      content: `אתה עוזר AI עם גישה לכלים של מינהל התכנון הישראלי. הכלים הזמינים הם:
+
+${toolsDescription}
+
+כשהמשתמש שואל על תכניות, בנייה, או מיקומים בישראל, תוכל להשתמש בכלים האלה.
+עבור שימוש בכלים, ענה בפורמט JSON כזה:
+{
+  "tool_call": {
+    "tool_name": "שם_הכלי",
+    "parameters": {
+      "parameter1": "value1",
+      "parameter2": "value2"
+    }
+  }
+}
+
+לאחר קבלת התוצאות, סכם אותן באברית בצורה ברורה ומועילה למשתמש.`
+    };
+
+    // Add system message to the beginning
+    const messagesWithSystem = [systemMessage, ...messages];
+    
+    // Generate completion
+    const completion = await generateChatCompletion(model, messagesWithSystem, options);
+    
+    // Check if the response contains a tool call
+    let content = completion.content;
+    
+    try {
+      // Try to parse tool call from response
+      const toolCallMatch = content.match(/\{[\s\S]*"tool_call"[\s\S]*\}/);
+      if (toolCallMatch) {
+        const toolCallData = JSON.parse(toolCallMatch[0]);
+        const toolCall = toolCallData.tool_call;
+        
+        if (toolCall && toolCall.tool_name && toolCall.parameters) {
+          // Validate the tool exists
+          const tool = availableTools.find(t => t.name === toolCall.tool_name);
+          
+          if (tool) {
+            logger.info(`Executing planning tool: ${toolCall.tool_name} with parameters:`, toolCall.parameters);
+            
+            // Execute the planning tool
+            const toolResult = await executePlanningTool(
+              toolCall.tool_name,
+              toolCall.parameters
+            );
+            
+            // Generate a follow-up response with the tool results
+            const followUpMessages = [
+              systemMessage,
+              ...messages,
+              {
+                role: 'assistant',
+                content: `אני מפעיל את הכלי ${toolCall.tool_name}...`
+              },
+              {
+                role: 'user',
+                content: `תוצאות הכלי ${toolCall.tool_name}:\n\n${toolResult.content}\n\nאנא סכם את התוצאות בצורה ברורה ומועילה באברית.`
+              }
+            ];
+            
+            const finalCompletion = await generateChatCompletion(model, followUpMessages, options);
+            
+            return {
+              ...finalCompletion,
+              toolUsed: {
+                name: toolCall.tool_name,
+                parameters: toolCall.parameters,
+                result: toolResult
+              }
+            };
+          }
+        }
+      }
+    } catch (parseError) {
+      // If parsing fails, return original completion
+      logger.warn('Failed to parse tool call from response:', parseError);
+    }
+    
+    return completion;
+    
+  } catch (error) {
+    logger.error('Error in generateChatCompletionWithTools:', error);
+    // Fallback to regular completion
+    return await generateChatCompletion(model, messages, options);
+  }
+};
+
 module.exports = {
   generateChatCompletion,
+  generateChatCompletionWithTools,
   streamChatCompletion,
   calculateCredits,
   countTokens,
   getAvailableModels,
   validateModel,
+  getAvailablePlanningTools,
+  executePlanningTool,
   modelConfigs
 };

@@ -15,9 +15,9 @@ const cookieParser = require('cookie-parser');
 const rateLimit = require('express-rate-limit');
 
 const logger = require('./utils/logger');
-const errorHandler = require('./middleware/errorHandler');
+const { globalErrorHandler, notFound } = require('./middleware/globalErrorHandler');
 const { connectDB } = require('./config/database');
-// const websocketService = require('./services/websocketService');
+const websocketService = require('./services/websocketService');
 const { specs, swaggerUi, swaggerOptions } = require('./config/swagger');
 // const monitoringService = require('./services/monitoringService');
 // const { requestMonitoring, errorMonitoring } = require('./middleware/monitoring');
@@ -33,9 +33,11 @@ const monitoringRoutes = require('./routes/monitoring');
 const securityRoutes = require('./routes/security');
 const gatewayRoutes = require('./routes/gateway');
 const organizationRoutes = require('./routes/organizations');
+const aiRoutes = require('./routes/ai');
+const a2aRoutes = require('./routes/a2a');
 
 const app = express();
-const PORT = process.env.PORT || 3004;
+const PORT = process.env.PORT || 3001;
 
 // Trust proxy for accurate client IPs
 app.set('trust proxy', 1);
@@ -58,10 +60,10 @@ app.use(helmet({
 
 // CORS configuration
 app.use(cors({
-  origin: true, // Allow all origins in development
+  origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-MFA-Token'],
 }));
 
 // Rate limiting
@@ -83,12 +85,36 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
 
-// Logging middleware
+// Response time tracking
+app.use((req, res, next) => {
+  req.startTime = Date.now();
+  next();
+});
+
+// Logging middleware with response time
 app.use(morgan('combined', {
   stream: {
     write: (message) => logger.info(message.trim())
   }
 }));
+
+// Custom response time logger
+app.use((req, res, next) => {
+  const originalSend = res.send;
+  
+  res.send = function(data) {
+    const responseTime = Date.now() - req.startTime;
+    logger.logPerformance(`${req.method} ${req.originalUrl}`, responseTime, {
+      statusCode: res.statusCode,
+      userId: req.user?.id,
+      ip: req.ip
+    });
+    
+    originalSend.call(this, data);
+  };
+  
+  next();
+});
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -111,6 +137,8 @@ app.use('/api/monitoring', monitoringRoutes);
 app.use('/api/security', securityRoutes);
 app.use('/api/gateway', gatewayRoutes);
 app.use('/api/organizations', organizationRoutes);
+app.use('/api/ai', aiRoutes);
+app.use('/api/a2a', a2aRoutes);
 
 // API documentation with Swagger
 app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(specs, swaggerOptions));
@@ -132,19 +160,10 @@ app.get('/api', (req, res) => {
 });
 
 // 404 handler
-app.use('*', (req, res) => {
-  res.status(404).json({
-    error: 'Endpoint not found',
-    method: req.method,
-    url: req.originalUrl
-  });
-});
+app.use('*', notFound);
 
-// Error handling middleware (must be last)
-// app.use(errorMonitoring);
-const __eh = require('./middleware/errorHandler');
-const __errorHandler = __eh.errorHandler || __eh;
-app.use(__errorHandler);
+// Global error handling middleware (must be last)
+app.use(globalErrorHandler);
 // Graceful shutdown handler
 const gracefulShutdown = (signal) => {
   logger.info(`Received ${signal}. Shutting down gracefully...`);
@@ -187,6 +206,16 @@ const startServer = async () => {
     await connectDB();
     logger.info('Database connected successfully');
 
+    // Initialize AI Service
+    const AIService = require('./services/ai/AIService');
+    const aiService = new AIService();
+    try {
+      await aiService.initialize();
+      logger.info('AI Service initialized successfully');
+    } catch (error) {
+      logger.warn('AI Service initialization failed, some features may not work:', error.message);
+    }
+
     // Start HTTP server
     const server = app.listen(PORT, () => {
       logger.info(`נ€ Server running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
@@ -194,8 +223,8 @@ const startServer = async () => {
       logger.info(`נ¥ Health check available at http://localhost:${PORT}/health`);
     });
 
-    // Initialize WebSocket service (disabled for demo)
-    // websocketService.initialize(server);
+    // Initialize WebSocket service
+    websocketService.initialize(server);
 
     // Export server for graceful shutdown
     global.server = server;

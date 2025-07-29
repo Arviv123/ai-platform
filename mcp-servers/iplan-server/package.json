@@ -1,0 +1,23 @@
+{
+  "name": "iplan-mcp-server",
+  "version": "1.0.0",
+  "description": "MCP Server for Israeli Planning Administration (Iplan)",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "node-fetch": "^3.3.2"
+  },
+  "keywords": [
+    "mcp",
+    "israel",
+    "planning",
+    "iplan"
+  ],
+  "author": "",
+  "license": "ISC"
+}

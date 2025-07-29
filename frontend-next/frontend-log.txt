@@ -1,0 +1,16 @@
+
+> frontend-next@0.1.0 dev
+> next dev --turbopack
+
+ ⚠ Warning: Found multiple lockfiles. Selecting C:\Users\חיים\package-lock.json.
+   Consider removing the lockfiles at:
+   * C:\Users\חיים\Desktop\ai-platform\frontend-next\package-lock.json
+   * C:\Users\חיים\Desktop\ai-platform\package-lock.json
+
+ ⚠ Port 3000 is in use by an unknown process, using available port 3002 instead.
+   ▲ Next.js 15.4.4 (Turbopack)
+   - Local:        http://localhost:3002
+   - Network:      http://172.20.10.3:3002
+
+ ✓ Starting...
+ ✓ Ready in 2.7s

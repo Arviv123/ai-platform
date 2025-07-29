@@ -4,9 +4,15 @@
   "description": "Example MCP server for AI Platform with various tools",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
+    "start": "node server-manager.js start",
+    "stop": "node server-manager.js stop",
+    "restart": "node server-manager.js restart",
+    "force-restart": "node server-manager.js force-restart",
+    "status": "node server-manager.js status",
+    "logs": "node server-manager.js logs",
     "dev": "nodemon index.js",
-    "test": "jest"
+    "test": "jest",
+    "direct": "node index.js"
   },
   "keywords": ["mcp", "server", "ai", "tools"],
   "author": "AI Platform",

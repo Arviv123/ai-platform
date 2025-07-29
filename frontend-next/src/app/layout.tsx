@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, Fira_Code } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/components/providers/AuthProvider";
@@ -21,7 +21,11 @@ export const metadata: Metadata = {
   title: "AI Platform - Enterprise AI Management",
   description: "Advanced AI platform with MCP integration, multi-tenancy, and enterprise security",
   keywords: ["AI", "MCP", "Enterprise", "Machine Learning", "Artificial Intelligence"],
-  viewport: "width=device-width, initial-scale=1",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({

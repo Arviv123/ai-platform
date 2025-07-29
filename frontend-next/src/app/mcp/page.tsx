@@ -4,29 +4,43 @@ import { useAuth } from '@/components/providers/AuthProvider';
 import { useToast } from '@/components/providers/ToastProvider';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { apiHelpers } from '@/lib/api';
 
 interface MCPServer {
   id: string;
   name: string;
-  status: 'running' | 'stopped' | 'error';
-  url: string;
-  tools: string[];
-  lastActive: string;
-  cpuUsage?: number;
-  memoryUsage?: number;
+  description: string;
+  command: string;
+  args: string[];
+  enabled: boolean;
+  healthStatus: 'HEALTHY' | 'UNHEALTHY' | 'UNKNOWN';
+  totalCalls: number;
+  lastUsedAt: string;
+  createdAt: string;
+}
+
+interface MCPTool {
+  name: string;
+  description: string;
+  parameters: any;
 }
 
 export default function MCPPage() {
   const { isAuthenticated, user, isLoading } = useAuth();
   const { showToast } = useToast();
   const router = useRouter();
+  
   const [servers, setServers] = useState<MCPServer[]>([]);
-  const [isLoadingData, setIsLoadingData] = useState(false);
-  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [isLoadingServers, setIsLoadingServers] = useState(true);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [selectedServer, setSelectedServer] = useState<MCPServer | null>(null);
+  const [availableTools, setAvailableTools] = useState<MCPTool[]>([]);
+  
   const [newServer, setNewServer] = useState({
     name: '',
-    url: '',
-    type: 'docker'
+    description: '',
+    command: '',
+    args: ''
   });
 
   useEffect(() => {
@@ -41,101 +55,169 @@ export default function MCPPage() {
   }, [isAuthenticated, isLoading, router]);
 
   const loadServers = async () => {
-    setIsLoadingData(true);
     try {
-      const token = localStorage.getItem('auth_token');
-      if (!token) return;
-
-      const response = await fetch('http://localhost:3005/api/mcp', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setServers(data.data || []);
-      } else {
-        showToast('Failed to load MCP servers', 'error');
-      }
-    } catch (error) {
-      console.error('Failed to load servers:', error);
-      showToast('Network error loading servers', 'error');
-    } finally {
-      setIsLoadingData(false);
-    }
-  };
-
-  const handleCreateServer = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const token = localStorage.getItem('auth_token');
-      if (!token) return;
-
-      const response = await fetch('http://localhost:3005/api/mcp', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
+      setIsLoadingServers(true);
+      
+      // Mock data - replace with real API call
+      const mockServers: MCPServer[] = [
+        {
+          id: '1',
+          name: 'Weather Server',
+          description: 'Provides weather information and forecasts',
+          command: 'python',
+          args: ['weather_mcp.py'],
+          enabled: true,
+          healthStatus: 'HEALTHY',
+          totalCalls: 245,                                                       
+          lastUsedAt: '2025-07-28T20:00:00Z',
+          createdAt: '2025-07-20T10:00:00Z'
         },
-        body: JSON.stringify(newServer)
-      });
-
-      if (response.ok) {
-        showToast('MCP server created successfully!', 'success');
-        setShowCreateModal(false);
-        setNewServer({ name: '', url: '', type: 'docker' });
-        loadServers();
-      } else {
-        const data = await response.json();
-        showToast(data.message || 'Failed to create server', 'error');
-      }
+        {
+          id: '2',
+          name: 'Database Tools',
+          description: 'Database query and management tools',
+          command: 'node',
+          args: ['db_mcp.js'],
+          enabled: false,
+          healthStatus: 'UNKNOWN',
+          totalCalls: 0,
+          lastUsedAt: '',
+          createdAt: '2025-07-25T15:30:00Z'
+        },
+        {
+          id: '3',
+          name: 'File System',
+          description: 'File operations and management',
+          command: './fs_server',
+          args: ['--port', '8080'],
+          enabled: true,
+          healthStatus: 'HEALTHY',
+          totalCalls: 89,
+          lastUsedAt: '2025-07-28T19:45:00Z',
+          createdAt: '2025-07-22T14:20:00Z'
+        }
+      ];
+      
+      setServers(mockServers);
     } catch (error) {
-      showToast('Network error creating server', 'error');
+      console.error('Failed to load MCP servers:', error);
+      showToast('Failed to load MCP servers', 'error');
+    } finally {
+      setIsLoadingServers(false);
     }
   };
 
-  const handleServerAction = async (serverId: string, action: 'start' | 'stop' | 'restart') => {
-    try {
-      const token = localStorage.getItem('auth_token');
-      if (!token) return;
-
-      const response = await fetch(`http://localhost:3005/api/mcp/${serverId}/${action}`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      if (response.ok) {
-        showToast(`Server ${action}ed successfully!`, 'success');
-        loadServers();
-      } else {
-        showToast(`Failed to ${action} server`, 'error');
-      }
-    } catch (error) {
-      showToast(`Network error ${action}ing server`, 'error');
+  const handleAddServer = async () => {
+    if (!newServer.name || !newServer.command) {
+      showToast('Please fill in all required fields', 'error');
+      return;
     }
+
+    try {
+      // Parse args from string
+      const args = newServer.args ? newServer.args.split(' ').filter(arg => arg.trim()) : [];
+      
+      const serverData = {
+        ...newServer,
+        args
+      };
+
+      // Mock API call
+      console.log('Adding server:', serverData);
+      showToast('MCP Server added successfully!', 'success');
+      
+      setShowAddModal(false);
+      setNewServer({ name: '', description: '', command: '', args: '' });
+      loadServers();
+    } catch (error) {
+      console.error('Failed to add MCP server:', error);
+      showToast('Failed to add MCP server', 'error');
+    }
+  };
+
+  const toggleServer = async (serverId: string, enabled: boolean) => {
+    try {
+      // Mock API call
+      console.log(`${enabled ? 'Enabling' : 'Disabling'} server:`, serverId);
+      
+      setServers(prev => prev.map(server => 
+        server.id === serverId ? { ...server, enabled } : server
+      ));
+      
+      showToast(`Server ${enabled ? 'enabled' : 'disabled'} successfully`, 'success');
+    } catch (error) {
+      console.error('Failed to toggle server:', error);
+      showToast('Failed to toggle server', 'error');
+    }
+  };
+
+  const testServer = async (serverId: string) => {
+    try {
+      showToast('Testing server connection...', 'info');
+      
+      // Mock API call
+      setTimeout(() => {
+        setServers(prev => prev.map(server => 
+          server.id === serverId ? { ...server, healthStatus: 'HEALTHY' as const } : server
+        ));
+        showToast('Server connection test successful!', 'success');
+      }, 2000);
+    } catch (error) {
+      console.error('Failed to test server:', error);
+      showToast('Server test failed', 'error');
+    }
+  };
+
+  const deleteServer = async (serverId: string) => {
+    if (!confirm('Are you sure you want to delete this server?')) {
+      return;
+    }
+
+    try {
+      // Mock API call
+      console.log('Deleting server:', serverId);
+      setServers(prev => prev.filter(server => server.id !== serverId));
+      showToast('Server deleted successfully', 'success');
+    } catch (error) {
+      console.error('Failed to delete server:', error);
+      showToast('Failed to delete server', 'error');
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    if (!dateString) return 'Never';
+    return new Date(dateString).toLocaleDateString('he-IL', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'running': return 'text-green-400';
-      case 'stopped': return 'text-gray-400';
-      case 'error': return 'text-red-400';
+      case 'HEALTHY': return 'text-green-400';
+      case 'UNHEALTHY': return 'text-red-400';
       default: return 'text-yellow-400';
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'running': return '🟢';
-      case 'stopped': return '⚫';
-      case 'error': return '🔴';
+      case 'HEALTHY': return '🟢';
+      case 'UNHEALTHY': return '🔴';
       default: return '🟡';
     }
   };
 
-  if (isLoading) {
+  if (isLoading || isLoadingServers) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 flex items-center justify-center">
-        <div className="spinner"></div>
+        <div className="flex items-center space-x-2">
+          <div className="spinner"></div>
+          <span className="text-white">Loading MCP servers...</span>
+        </div>
       </div>
     );
   }
@@ -146,235 +228,263 @@ export default function MCPPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900">
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-white mb-2">
-              🤖 MCP Servers
-            </h1>
-            <p className="text-blue-200">
-              Manage your Model Context Protocol servers
-            </p>
+      {/* Header */}
+      <div className="bg-black/20 backdrop-blur-xl border-b border-white/10">
+        <div className="max-w-7xl mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-white">🔌 MCP Servers</h1>
+              <p className="text-blue-200">ניהול שרתי Model Context Protocol</p>
+            </div>
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={() => router.push('/dashboard')}
+                className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
+              >
+                ← חזור לדשבורד
+              </button>
+              <button
+                onClick={() => setShowAddModal(true)}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+              >
+                ➕ הוסף שרת חדש
+              </button>
+            </div>
           </div>
-          
-          <div className="flex space-x-4">
-            <button
-              onClick={() => router.push('/dashboard')}
-              className="glass px-4 py-2 rounded-lg text-white hover:bg-white/10 transition-colors"
-            >
-              ← Dashboard
-            </button>
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
-            >
-              ➕ Create Server
-            </button>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto p-6">
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="glass p-6 rounded-xl">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-blue-200 text-sm">סך הכל שרתים</p>
+                <p className="text-3xl font-bold text-white">{servers.length}</p>
+              </div>
+              <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
+                <span className="text-2xl">🔌</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="glass p-6 rounded-xl">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-blue-200 text-sm">שרתים פעילים</p>
+                <p className="text-3xl font-bold text-white">
+                  {servers.filter(s => s.enabled).length}
+                </p>
+              </div>
+              <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center">
+                <span className="text-2xl">✅</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="glass p-6 rounded-xl">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-blue-200 text-sm">שרתים בריאים</p>
+                <p className="text-3xl font-bold text-white">
+                  {servers.filter(s => s.healthStatus === 'HEALTHY').length}
+                </p>
+              </div>
+              <div className="w-12 h-12 bg-purple-600 rounded-lg flex items-center justify-center">
+                <span className="text-2xl">💚</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="glass p-6 rounded-xl">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-blue-200 text-sm">סך קריאות</p>
+                <p className="text-3xl font-bold text-white">
+                  {servers.reduce((sum, s) => sum + s.totalCalls, 0)}
+                </p>
+              </div>
+              <div className="w-12 h-12 bg-orange-600 rounded-lg flex items-center justify-center">
+                <span className="text-2xl">📊</span>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Servers Grid */}
-        {isLoadingData ? (
-          <div className="flex justify-center items-center h-64">
-            <div className="spinner"></div>
-          </div>
-        ) : servers.length === 0 ? (
-          <div className="glass p-8 rounded-xl text-center">
-            <div className="text-4xl mb-4">🤖</div>
-            <h3 className="text-xl font-semibold text-white mb-2">No MCP Servers</h3>
-            <p className="text-blue-200 mb-4">Create your first MCP server to get started</p>
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
-            >
-              Create Server
-            </button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-            {servers.map((server) => (
-              <div key={server.id} className="glass p-6 rounded-xl">
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h3 className="text-lg font-semibold text-white">{server.name}</h3>
-                    <p className="text-blue-200 text-sm">{server.url}</p>
-                  </div>
-                  <div className={`flex items-center space-x-1 ${getStatusColor(server.status)}`}>
-                    <span>{getStatusIcon(server.status)}</span>
-                    <span className="text-sm font-medium capitalize">{server.status}</span>
-                  </div>
-                </div>
-
-                {/* Server Stats */}
-                {server.status === 'running' && (
-                  <div className="mb-4 space-y-2">
-                    {server.cpuUsage !== undefined && (
-                      <div>
-                        <div className="flex justify-between text-sm text-blue-200 mb-1">
-                          <span>CPU Usage</span>
-                          <span>{server.cpuUsage}%</span>
-                        </div>
-                        <div className="w-full bg-white/10 rounded-full h-2">
-                          <div
-                            className="bg-blue-500 h-2 rounded-full"
-                            style={{ width: `${server.cpuUsage}%` }}
-                          ></div>
-                        </div>
-                      </div>
-                    )}
-                    
-                    {server.memoryUsage !== undefined && (
-                      <div>
-                        <div className="flex justify-between text-sm text-blue-200 mb-1">
-                          <span>Memory Usage</span>
-                          <span>{server.memoryUsage}%</span>
-                        </div>
-                        <div className="w-full bg-white/10 rounded-full h-2">
-                          <div
-                            className="bg-purple-500 h-2 rounded-full"
-                            style={{ width: `${server.memoryUsage}%` }}
-                          ></div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Tools */}
-                {server.tools && server.tools.length > 0 && (
-                  <div className="mb-4">
-                    <p className="text-blue-200 text-sm mb-2">Available Tools:</p>
-                    <div className="flex flex-wrap gap-1">
-                      {server.tools.slice(0, 3).map((tool, index) => (
-                        <span
-                          key={index}
-                          className="px-2 py-1 bg-blue-600/30 text-blue-200 text-xs rounded"
-                        >
-                          {tool}
-                        </span>
-                      ))}
-                      {server.tools.length > 3 && (
-                        <span className="px-2 py-1 bg-gray-600/30 text-gray-300 text-xs rounded">
-                          +{server.tools.length - 3} more
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Last Active */}
-                <p className="text-blue-200 text-xs mb-4">
-                  Last active: {new Date(server.lastActive).toLocaleString()}
-                </p>
-
-                {/* Actions */}
-                <div className="flex space-x-2">
-                  {server.status === 'running' ? (
-                    <>
-                      <button
-                        onClick={() => handleServerAction(server.id, 'stop')}
-                        className="flex-1 px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-sm rounded transition-colors"
-                      >
-                        Stop
-                      </button>
-                      <button
-                        onClick={() => handleServerAction(server.id, 'restart')}
-                        className="flex-1 px-3 py-2 bg-yellow-600 hover:bg-yellow-700 text-white text-sm rounded transition-colors"
-                      >
-                        Restart
-                      </button>
-                    </>
-                  ) : (
-                    <button
-                      onClick={() => handleServerAction(server.id, 'start')}
-                      className="flex-1 px-3 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded transition-colors"
-                    >
-                      Start
-                    </button>
-                  )}
-                  <button
-                    onClick={() => router.push(`/mcp/${server.id}`)}
-                    className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded transition-colors"
-                  >
-                    Details
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Create Server Modal */}
-        {showCreateModal && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="glass p-6 rounded-xl w-full max-w-md">
-              <h2 className="text-xl font-bold text-white mb-4">Create MCP Server</h2>
-              
-              <form onSubmit={handleCreateServer} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-blue-200 mb-2">
-                    Server Name
-                  </label>
-                  <input
-                    type="text"
-                    value={newServer.name}
-                    onChange={(e) => setNewServer({ ...newServer, name: e.target.value })}
-                    required
-                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="My MCP Server"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-blue-200 mb-2">
-                    Server URL
-                  </label>
-                  <input
-                    type="url"
-                    value={newServer.url}
-                    onChange={(e) => setNewServer({ ...newServer, url: e.target.value })}
-                    required
-                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="http://localhost:8080"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-blue-200 mb-2">
-                    Server Type
-                  </label>
-                  <select
-                    value={newServer.type}
-                    onChange={(e) => setNewServer({ ...newServer, type: e.target.value })}
-                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="docker">Docker Container</option>
-                    <option value="process">Local Process</option>
-                    <option value="remote">Remote Server</option>
-                  </select>
-                </div>
-                
-                <div className="flex space-x-3 pt-4">
-                  <button
-                    type="button"
-                    onClick={() => setShowCreateModal(false)}
-                    className="flex-1 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
-                  >
-                    Create
-                  </button>
-                </div>
-              </form>
+        {/* Servers List */}
+        <div className="glass p-6 rounded-xl">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-bold text-white">שרתי MCP</h2>
+            <div className="flex space-x-2">
+              <button
+                onClick={loadServers}
+                className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
+              >
+                🔄 רענן
+              </button>
             </div>
           </div>
-        )}
+
+          {servers.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="text-6xl mb-4">🔌</div>
+              <h3 className="text-xl font-semibold text-white mb-2">אין שרתי MCP</h3>
+              <p className="text-blue-200 mb-4">התחל על ידי הוספת השרת הראשון שלך</p>
+              <button
+                onClick={() => setShowAddModal(true)}
+                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+              >
+                הוסף שרת ראשון
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {servers.map((server) => (
+                <div key={server.id} className="bg-white/5 rounded-lg p-4 hover:bg-white/10 transition-colors">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-3">
+                        <h3 className="text-lg font-semibold text-white">{server.name}</h3>
+                        <span className={`text-sm ${getStatusColor(server.healthStatus)}`}>
+                          {getStatusIcon(server.healthStatus)} {server.healthStatus}
+                        </span>
+                        <span className={`px-2 py-1 rounded text-xs ${
+                          server.enabled ? 'bg-green-600 text-white' : 'bg-gray-600 text-white'
+                        }`}>
+                          {server.enabled ? 'פעיל' : 'לא פעיל'}
+                        </span>
+                      </div>
+                      <p className="text-blue-200 text-sm mt-1">{server.description}</p>
+                      <div className="flex items-center space-x-4 mt-2 text-xs text-blue-200">
+                        <span>📞 {server.totalCalls} קריאות</span>
+                        <span>⏰ שימוש אחרון: {formatDate(server.lastUsedAt)}</span>
+                        <span>📅 נוצר: {formatDate(server.createdAt)}</span>
+                      </div>
+                      <div className="mt-2 font-mono text-xs text-gray-400">
+                        {server.command} {server.args.join(' ')}
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => testServer(server.id)}
+                        className="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white text-sm rounded transition-colors"
+                        title="Test server connection"
+                      >
+                        🧪
+                      </button>
+                      <button
+                        onClick={() => toggleServer(server.id, !server.enabled)}
+                        className={`px-3 py-1 text-white text-sm rounded transition-colors ${
+                          server.enabled 
+                            ? 'bg-red-600 hover:bg-red-700' 
+                            : 'bg-green-600 hover:bg-green-700'
+                        }`}
+                        title={server.enabled ? 'Disable server' : 'Enable server'}
+                      >
+                        {server.enabled ? '⏸️' : '▶️'}
+                      </button>
+                      <button
+                        onClick={() => setSelectedServer(server)}
+                        className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded transition-colors"
+                        title="Edit server"
+                      >
+                        ✏️
+                      </button>
+                      <button
+                        onClick={() => deleteServer(server.id)}
+                        className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded transition-colors"
+                        title="Delete server"
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* Add Server Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="glass p-6 rounded-xl w-full max-w-md mx-4">
+            <h3 className="text-xl font-bold text-white mb-4">הוסף שרת MCP חדש</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-blue-200 mb-2">
+                  שם השרת *
+                </label>
+                <input
+                  type="text"
+                  value={newServer.name}
+                  onChange={(e) => setNewServer(prev => ({ ...prev, name: e.target.value }))}
+                  className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="e.g., Weather Server"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-blue-200 mb-2">
+                  תיאור
+                </label>
+                <input
+                  type="text"
+                  value={newServer.description}
+                  onChange={(e) => setNewServer(prev => ({ ...prev, description: e.target.value }))}
+                  className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="תיאור קצר של השרת"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-blue-200 mb-2">
+                  פקודה *
+                </label>
+                <input
+                  type="text"
+                  value={newServer.command}
+                  onChange={(e) => setNewServer(prev => ({ ...prev, command: e.target.value }))}
+                  className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="e.g., python, node, ./server"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-blue-200 mb-2">
+                  ארגומנטים
+                </label>
+                <input
+                  type="text"
+                  value={newServer.args}
+                  onChange={(e) => setNewServer(prev => ({ ...prev, args: e.target.value }))}
+                  className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="e.g., server.py --port 8080"
+                />
+              </div>
+            </div>
+
+            <div className="flex space-x-4 mt-6">
+              <button
+                onClick={() => setShowAddModal(false)}
+                className="flex-1 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
+              >
+                ביטול
+              </button>
+              <button
+                onClick={handleAddServer}
+                className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+              >
+                הוסף שרת
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

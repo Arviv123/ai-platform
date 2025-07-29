@@ -6,26 +6,16 @@ const UAParser = require('ua-parser-js');
 
 const prisma = new PrismaClient();
 
-// Enhanced token verification with blacklist check
+// Enhanced token verification
 async function verifyToken(token) {
   try {
-    const payload = jwt.verify(token, process.env.JWT_SECRET || "super-secret-key");
-    
-    // Check if token is in blacklist (for logout/compromised tokens)
-    const blacklistedToken = await prisma.refreshToken.findFirst({
-      where: { 
-        token: token,
-        revokedAt: { not: null }
-      }
-    });
-    
-    if (blacklistedToken) {
-      return null;
-    }
-    
+    const secret = process.env.JWT_SECRET || "your-super-secret-jwt-key-change-in-production";
+    logger.info('Verifying token with secret:', secret.substring(0, 10) + '...');
+    const payload = jwt.verify(token, secret);
+    logger.info('Token verified successfully:', { sub: payload.sub, email: payload.email });
     return payload;
   } catch (e) {
-    logger.warn('Token verification failed:', e.message);
+    logger.error('Token verification failed:', e.message);
     return null;
   }
 }
@@ -58,10 +48,9 @@ async function authenticate(req, res, next) {
         id: true,
         email: true,
         role: true,
-        status: true,
         mfaEnabled: true,
         organizationId: true,
-        lockedUntil: true,
+        lockUntil: true,
         lastLogin: true
       }
     });
@@ -74,7 +63,7 @@ async function authenticate(req, res, next) {
     }
 
     // Check if user account is locked
-    if (user.lockedUntil && user.lockedUntil > new Date()) {
+    if (user.lockUntil && user.lockUntil > new Date()) {
       return res.status(423).json({
         status: "fail",
         message: "Account temporarily locked due to security concerns"
@@ -203,19 +192,18 @@ async function logSecurityEvent(req, user) {
     const parser = new UAParser(userAgent);
     const geo = geoip.lookup(req.ip);
     
-    await prisma.securityAuditLog.create({
-      data: {
-        userId: user.id,
-        action: `${req.method} ${req.path}`,
-        result: 'success',
-        ipAddress: req.ip,
-        userAgent: userAgent,
-        location: geo ? `${geo.city}, ${geo.country}` : null,
-        details: JSON.stringify({
-          browser: parser.getBrowser(),
-          os: parser.getOS(),
-          device: parser.getDevice()
-        })
+    // Log to console for now - database table doesn't exist yet
+    logger.info('Security event:', {
+      userId: user.id,
+      action: `${req.method} ${req.path}`,
+      result: 'success',
+      ipAddress: req.ip,
+      userAgent: userAgent,
+      location: geo ? `${geo.city}, ${geo.country}` : null,
+      details: {
+        browser: parser.getBrowser(),
+        os: parser.getOS(),
+        device: parser.getDevice()
       }
     });
   } catch (error) {

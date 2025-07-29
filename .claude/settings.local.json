@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx prisma generate:*)",
+      "Bash(npx prisma migrate dev:*)",
+      "Bash(npx prisma migrate:*)",
+      "Bash(npx prisma:*)",
+      "Bash(npm run dev:*)",
+      "Bash(curl:*)",
+      "Bash(node:*)",
+      "Bash(find:*)",
+      "Bash(rm:*)",
+      "Bash(npm start)",
+      "Bash(taskkill:*)",
+      "Bash(npx kill-port:*)",
+      "Bash(npm install:*)",
+      "Bash(ls:*)",
+      "Bash(pkill:*)",
+      "Bash(TASKKILL //F //PID 75648)",
+      "Bash(TASKKILL //F //PID 66264)",
+      "Bash(TASKKILL //F //PID 65072)",
+      "Bash(npm run:*)",
+      "Bash(timeout 15 npm run dev)",
+      "Bash(timeout 10 npm run dev)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:developers.googleblog.com)",
+      "Bash(timeout 30 npx prisma generate)"
+    ],
+    "deny": []
+  }
+}

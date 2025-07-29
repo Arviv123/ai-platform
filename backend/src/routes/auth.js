@@ -51,6 +51,23 @@ router.post('/refresh', authController.refresh);
 // Logout
 router.post('/logout', authController.logout);
 
+// OAuth routes - placeholders for future implementation
+router.get('/google', (req, res) => {
+  res.status(501).json({
+    status: 'fail',
+    message: 'Google OAuth not implemented yet. Please use email/password login.',
+    type: 'not_implemented'
+  });
+});
+
+router.get('/facebook', (req, res) => {
+  res.status(501).json({
+    status: 'fail', 
+    message: 'Facebook OAuth not implemented yet. Please use email/password login.',
+    type: 'not_implemented'
+  });
+});
+
 // Health check
 router.get("/", (req, res) => {
   res.json({ status: "ok", route: "auth" });

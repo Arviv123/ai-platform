@@ -4,6 +4,8 @@ import { useAuth } from '@/components/providers/AuthProvider';
 import { useToast } from '@/components/providers/ToastProvider';
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { apiHelpers } from '@/lib/api';
+import { useWebSocket } from '@/hooks/useWebSocket';
 
 interface Message {
   id: string;
@@ -54,51 +56,26 @@ export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [selectedModel, setSelectedModel] = useState('claude-3-sonnet');
+  const [selectedModel, setSelectedModel] = useState('gemini-1.5-flash');
   
   // UI state
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showModelSelector, setShowModelSelector] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [streamingEnabled, setStreamingEnabled] = useState(true);
+  const [streamingMessage, setStreamingMessage] = useState('');
   
-  // Available models
-  const [availableModels, setAvailableModels] = useState<AIModel[]>([
-    {
-      id: 'claude-3-sonnet',
-      name: 'Claude 3 Sonnet',
-      provider: 'anthropic',
-      description: 'Balanced performance and speed',
-      contextLength: 200000,
-      available: true
-    },
-    {
-      id: 'claude-3-opus',
-      name: 'Claude 3 Opus',
-      provider: 'anthropic',
-      description: 'Most capable model',
-      contextLength: 200000,
-      available: true
-    },
-    {
-      id: 'gpt-4-turbo',
-      name: 'GPT-4 Turbo',
-      provider: 'openai',
-      description: 'Latest GPT-4 model',
-      contextLength: 128000,
-      available: true
-    },
-    {
-      id: 'gemini-pro',
-      name: 'Gemini Pro',
-      provider: 'google',
-      description: 'Google\'s advanced model',
-      contextLength: 32000,
-      available: true
-    }
-  ]);
+  // Available models and tools
+  const [availableModels, setAvailableModels] = useState<AIModel[]>([]);
+  const [availableTools, setAvailableTools] = useState<any[]>([]);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  // WebSocket integration
+  const { isConnected, sendMessage: sendWsMessage, addMessageHandler } = useWebSocket({
+    debug: process.env.NODE_ENV === 'development'
+  });
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -108,6 +85,8 @@ export default function ChatPage() {
 
     if (isAuthenticated) {
       loadChatSessions();
+      loadAvailableModels();
+      loadAvailableTools();
     }
   }, [isAuthenticated, isLoading, router]);
 
@@ -115,27 +94,80 @@ export default function ChatPage() {
     scrollToBottom();
   }, [messages]);
 
+  // WebSocket message handler for real-time updates
+  useEffect(() => {
+    const cleanup = addMessageHandler('notification', (message) => {
+      if (message.data?.type === 'chat_message') {
+        const { assistantMessage, sessionId } = message.data;
+        
+        // Only update if it's for the current session
+        if (sessionId === currentSession?.id) {
+          const aiMessage: Message = {
+            id: assistantMessage.id,
+            role: 'assistant',
+            content: assistantMessage.content,
+            timestamp: assistantMessage.createdAt,
+            model: assistantMessage.model,
+            tokens: assistantMessage.tokens
+          };
+          
+          setMessages(prev => [...prev, aiMessage]);
+          setIsTyping(false);
+        }
+      }
+    });
+
+    return cleanup;
+  }, [addMessageHandler, currentSession?.id]);
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  const loadAvailableModels = async () => {
+    try {
+      const response = await apiHelpers.chat.getModels();
+      if (response?.data?.models) {
+        const models = response.data.models.map((model: any) => ({
+          id: model.id,
+          name: model.name,
+          provider: model.provider.toLowerCase(),
+          description: `${model.provider} AI Model`,
+          contextLength: 200000,
+          available: true
+        }));
+        setAvailableModels(models);
+        if (models.length > 0 && !selectedModel) {
+          setSelectedModel(models[0].id);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load available models:', error);
+      showToast('Failed to load AI models', 'error');
+    }
+  };
+
+  const loadAvailableTools = async () => {
+    try {
+      const response = await apiHelpers.chat.getAvailableTools();
+      if (response?.data?.tools) {
+        setAvailableTools(response.data.tools);
+        console.log(`Loaded ${response.data.tools.length} MCP tools`);
+      }
+    } catch (error) {
+      console.error('Failed to load available tools:', error);
+      // Don't show error toast for tools as it's not critical
+    }
+  };
+
   const loadChatSessions = async () => {
     try {
-      const token = localStorage.getItem('auth_token');
-      if (!token) return;
-
-      const response = await fetch('http://localhost:3005/api/chat/sessions', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setSessions(data.data || []);
-        
-        // Load the most recent session
-        if (data.data && data.data.length > 0) {
-          loadSession(data.data[0].id);
-        }
+      const data = await apiHelpers.chat.getSessions();
+      setSessions(data.data || []);
+      
+      // Load the most recent session
+      if (data.data && data.data.length > 0) {
+        loadSession(data.data[0].id);
       }
     } catch (error) {
       console.error('Failed to load chat sessions:', error);
@@ -145,19 +177,10 @@ export default function ChatPage() {
 
   const loadSession = async (sessionId: string) => {
     try {
-      const token = localStorage.getItem('auth_token');
-      if (!token) return;
-
-      const response = await fetch(`http://localhost:3005/api/chat/sessions/${sessionId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setCurrentSession(data.data);
-        setMessages(data.data.messages || []);
-        setSelectedModel(data.data.model || 'claude-3-sonnet');
-      }
+      const data = await apiHelpers.chat.getSession(sessionId);
+      setCurrentSession(data.data);
+      setMessages(data.data.messages || []);
+      setSelectedModel(data.data.model || 'claude-3-sonnet');
     } catch (error) {
       console.error('Failed to load session:', error);
       showToast('Failed to load conversation', 'error');
@@ -166,28 +189,15 @@ export default function ChatPage() {
 
   const createNewSession = async () => {
     try {
-      const token = localStorage.getItem('auth_token');
-      if (!token) return;
-
-      const response = await fetch('http://localhost:3005/api/chat/sessions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          title: 'New Conversation',
-          model: selectedModel
-        })
+      const data = await apiHelpers.chat.createSession({
+        title: 'New Conversation',
+        model: selectedModel
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        const newSession = data.data;
-        setSessions([newSession, ...sessions]);
-        setCurrentSession(newSession);
-        setMessages([]);
-      }
+      const newSession = data.data;
+      setSessions([newSession, ...sessions]);
+      setCurrentSession(newSession);
+      setMessages([]);
     } catch (error) {
       console.error('Failed to create session:', error);
       showToast('Failed to create new conversation', 'error');
@@ -207,74 +217,122 @@ export default function ChatPage() {
     setMessages(prev => [...prev, userMessage]);
     setInputMessage('');
     setIsTyping(true);
+    setStreamingMessage('');
 
     try {
-      const token = localStorage.getItem('auth_token');
-      if (!token) return;
-
-      const response = await fetch('http://localhost:3005/api/chat/message', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          sessionId: currentSession?.id,
-          message: userMessage.content,
-          model: selectedModel
-        })
-      });
-
-      if (response.ok) {
-        const reader = response.body?.getReader();
-        if (!reader) return;
-
-        const assistantMessage: Message = {
-          id: (Date.now() + 1).toString(),
+      if (streamingEnabled) {
+        // Use streaming API
+        let currentStreamingMessage = '';
+        const streamingMessageId = Date.now().toString() + '_streaming';
+        
+        // Add placeholder streaming message
+        const streamingMsg: Message = {
+          id: streamingMessageId,
           role: 'assistant',
           content: '',
           timestamp: new Date().toISOString(),
           model: selectedModel
         };
+        setMessages(prev => [...prev, streamingMsg]);
 
-        setMessages(prev => [...prev, assistantMessage]);
-
-        // Stream the response
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          const chunk = new TextDecoder().decode(value);
-          const lines = chunk.split('\n');
-
-          for (const line of lines) {
-            if (line.startsWith('data: ')) {
-              try {
-                const data = JSON.parse(line.slice(6));
-                if (data.content) {
-                  assistantMessage.content += data.content;
-                  setMessages(prev => prev.map(msg => 
-                    msg.id === assistantMessage.id ? { ...assistantMessage } : msg
-                  ));
-                }
-                if (data.done) {
-                  assistantMessage.tokens = data.tokens;
-                  assistantMessage.tools = data.tools;
-                }
-              } catch (e) {
-                // Ignore parsing errors
-              }
+        await apiHelpers.chat.streamMessage(
+          {
+            sessionId: currentSession?.id,
+            message: userMessage.content,
+            model: selectedModel
+          },
+          // onChunk
+          (chunk) => {
+            currentStreamingMessage = chunk.fullText;
+            setStreamingMessage(currentStreamingMessage);
+            
+            // Update streaming message in real-time
+            setMessages(prev => prev.map(msg => 
+              msg.id === streamingMessageId 
+                ? { ...msg, content: currentStreamingMessage }
+                : msg
+            ));
+          },
+          // onComplete
+          (response) => {
+            const { assistantMessage, session } = response;
+            
+            // Update current session if needed
+            if (session && !currentSession) {
+              setCurrentSession(session);
+              setSessions(prev => [session, ...prev.filter(s => s.id !== session.id)]);
             }
+
+            // Replace streaming message with final message
+            const finalMessage: Message = {
+              id: assistantMessage.id,
+              role: 'assistant',
+              content: assistantMessage.content,
+              timestamp: assistantMessage.createdAt,
+              model: assistantMessage.model,
+              tokens: assistantMessage.tokens
+            };
+
+            setMessages(prev => prev.map(msg => 
+              msg.id === streamingMessageId ? finalMessage : msg
+            ));
+            
+            setIsTyping(false);
+            setStreamingMessage('');
+            showToast('Message sent successfully', 'success');
+          },
+          // onError
+          (error) => {
+            console.error('Streaming error:', error);
+            setIsTyping(false);
+            setStreamingMessage('');
+            
+            // Remove failed streaming message
+            setMessages(prev => prev.filter(msg => msg.id !== streamingMessageId));
+            showToast('Failed to get AI response', 'error');
           }
-        }
+        );
+
       } else {
-        showToast('Failed to send message', 'error');
+        // Use regular API
+        const response = await apiHelpers.chat.sendMessage({
+          sessionId: currentSession?.id,
+          message: userMessage.content,
+          model: selectedModel
+        });
+
+        if (response?.data) {
+          const { assistantMessage, session } = response.data;
+          
+          // Update current session if needed
+          if (session && !currentSession) {
+            setCurrentSession(session);
+            setSessions(prev => [session, ...prev.filter(s => s.id !== session.id)]);
+          }
+
+          // Add assistant message
+          const aiMessage: Message = {
+            id: assistantMessage.id,
+            role: 'assistant',
+            content: assistantMessage.content,
+            timestamp: assistantMessage.createdAt,
+            model: assistantMessage.model,
+            tokens: assistantMessage.tokens
+          };
+
+          setMessages(prev => [...prev, aiMessage]);
+          showToast('Message sent successfully', 'success');
+        } else {
+          showToast('Failed to get AI response', 'error');
+        }
+        
+        setIsTyping(false);
       }
     } catch (error) {
       console.error('Failed to send message:', error);
       showToast('Network error sending message', 'error');
-    } finally {
       setIsTyping(false);
+      setStreamingMessage('');
     }
   };
 
@@ -422,6 +480,41 @@ export default function ChatPage() {
             </div>
             
             <div className="flex items-center space-x-2">
+              {/* WebSocket Status Indicator */}
+              <div className="flex items-center space-x-2 px-2 py-1 glass rounded">
+                <div className={`w-2 h-2 rounded-full ${
+                  isConnected ? 'bg-green-500' : 'bg-red-500'
+                }`}></div>
+                <span className="text-white text-xs">
+                  {isConnected ? 'Connected' : 'Offline'}
+                </span>
+              </div>
+
+              {/* Streaming Toggle */}
+              <div className="flex items-center space-x-2 px-2 py-1 glass rounded">
+                <span className="text-white text-xs">Streaming:</span>
+                <button
+                  onClick={() => setStreamingEnabled(!streamingEnabled)}
+                  className={`w-8 h-4 rounded-full transition-colors ${
+                    streamingEnabled ? 'bg-blue-500' : 'bg-gray-500'
+                  }`}
+                >
+                  <div className={`w-3 h-3 rounded-full bg-white transition-transform ${
+                    streamingEnabled ? 'translate-x-4' : 'translate-x-0.5'
+                  }`}></div>
+                </button>
+              </div>
+
+              {/* MCP Tools Indicator */}
+              {availableTools.length > 0 && (
+                <div className="flex items-center space-x-2 px-2 py-1 glass rounded">
+                  <div className="w-2 h-2 rounded-full bg-purple-500"></div>
+                  <span className="text-white text-xs">
+                    {availableTools.length} Tools
+                  </span>
+                </div>
+              )}
+              
               <button
                 onClick={() => router.push('/dashboard')}
                 className="px-3 py-1 glass hover:bg-white/10 text-white text-sm rounded transition-colors"
@@ -520,6 +613,26 @@ export default function ChatPage() {
                               ))}
                             </div>
                           )}
+                          
+                          {/* Show tools used from metadata */}
+                          {message.role === 'assistant' && (() => {
+                            try {
+                              const metadata = JSON.parse(message.model || '{}');
+                              const toolsUsed = metadata.toolsUsed || [];
+                              return toolsUsed.length > 0 && (
+                                <div className="flex items-center space-x-1">
+                                  <span className="text-xs opacity-70">🔧 MCP Tools:</span>
+                                  {toolsUsed.map((tool: any, index: number) => (
+                                    <span key={index} className="px-2 py-1 bg-purple-500/20 rounded text-xs">
+                                      {tool.name || tool.toolName || 'tool'}
+                                    </span>
+                                  ))}
+                                </div>
+                              );
+                            } catch {
+                              return null;
+                            }
+                          })()}
                         </div>
                       </div>
                     </div>

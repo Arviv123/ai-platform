@@ -6,7 +6,7 @@ const logger = require("../utils/logger");
 const prisma = new PrismaClient();
 
 const sign = (payload) =>
-  jwt.sign(payload, process.env.JWT_SECRET || "dev-secret", { expiresIn: "7d" });
+  jwt.sign(payload, process.env.JWT_SECRET || "your-super-secret-jwt-key-change-in-production", { expiresIn: "7d" });
 
 // User registration
 exports.register = async (req, res) => {
@@ -197,10 +197,9 @@ exports.me = async (req, res) => {
         email: true,
         firstName: true,
         lastName: true,
-        subscription: true,
-        credits: true,
         role: true,
-        status: true,
+        organizationId: true,
+        mfaEnabled: true,
         createdAt: true,
         lastLogin: true
       }
@@ -239,7 +238,7 @@ exports.refresh = async (req, res) => {
       });
     }
 
-    const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET || "dev-secret");
+    const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET || "your-super-secret-jwt-key-change-in-production");
     
     if (decoded.type !== 'refresh') {
       return res.status(400).json({ 

@@ -71,7 +71,7 @@ export default function MonitoringPage() {
       if (!token) return;
 
       // Load system metrics
-      const metricsResponse = await fetch('http://localhost:3005/api/monitoring/metrics', {
+      const metricsResponse = await fetch('http://localhost:3004/api/monitoring/metrics', {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -81,7 +81,7 @@ export default function MonitoringPage() {
       }
 
       // Load service health
-      const healthResponse = await fetch('http://localhost:3005/api/gateway/health', {
+      const healthResponse = await fetch('http://localhost:3004/api/gateway/health', {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -91,7 +91,7 @@ export default function MonitoringPage() {
       }
 
       // Load request metrics
-      const requestsResponse = await fetch('http://localhost:3005/api/monitoring/requests', {
+      const requestsResponse = await fetch('http://localhost:3004/api/monitoring/requests', {
         headers: { Authorization: `Bearer ${token}` }
       });
       

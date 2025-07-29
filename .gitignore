@@ -148,3 +148,8 @@ docker-compose.override.yml
 
 # Redis dump
 dump.rdb
+
+# Windows problematic files
+nul
+**/nul
+backend/nul

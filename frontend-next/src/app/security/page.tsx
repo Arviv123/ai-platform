@@ -54,7 +54,7 @@ export default function SecurityPage() {
       const token = localStorage.getItem('auth_token');
       if (!token) return;
 
-      const response = await fetch('http://localhost:3005/api/security/settings', {
+      const response = await fetch('http://localhost:3004/api/security/settings', {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -89,7 +89,7 @@ export default function SecurityPage() {
       const token = localStorage.getItem('auth_token');
       if (!token) return;
 
-      const response = await fetch('http://localhost:3005/api/security/password/change', {
+      const response = await fetch('http://localhost:3004/api/security/password/change', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -120,7 +120,7 @@ export default function SecurityPage() {
       const token = localStorage.getItem('auth_token');
       if (!token) return;
 
-      const response = await fetch('http://localhost:3005/api/security/mfa/setup', {
+      const response = await fetch('http://localhost:3004/api/security/mfa/setup', {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -144,7 +144,7 @@ export default function SecurityPage() {
       const token = localStorage.getItem('auth_token');
       if (!token) return;
 
-      const response = await fetch('http://localhost:3005/api/security/mfa/enable', {
+      const response = await fetch('http://localhost:3004/api/security/mfa/enable', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -178,7 +178,7 @@ export default function SecurityPage() {
       const token = localStorage.getItem('auth_token');
       if (!token) return;
 
-      const response = await fetch('http://localhost:3005/api/security/mfa/disable', {
+      const response = await fetch('http://localhost:3004/api/security/mfa/disable', {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` }
       });

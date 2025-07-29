@@ -1,0 +1,126 @@
+
+> ai-platform-backend@1.0.0 dev
+> nodemon src/index.js
+
+[33m[nodemon] 3.1.10[39m
+[33m[nodemon] to restart at any time, enter `rs`[39m
+[33m[nodemon] watching path(s): *.*[39m
+[33m[nodemon] watching extensions: js,mjs,cjs,json[39m
+[32m[nodemon] starting `node src/index.js`[39m
+2025-07-28 15:30:49:3049 [33mwarn[39m: [33mRedis URL not configured, using local cache only[39m
+2025-07-28 15:30:50:3050 [32minfo[39m: [32mService configuration loaded: auth-service[39m
+2025-07-28 15:30:50:3050 [32minfo[39m: [32mService configuration loaded: chat-service[39m
+2025-07-28 15:30:50:3050 [32minfo[39m: [32mService configuration loaded: mcp-service[39m
+2025-07-28 15:30:50:3050 [32minfo[39m: [32mAPI Gateway initialized[39m
+2025-07-28 15:30:50:3050 [32minfo[39m: [32mDatabase Info:[39m
+2025-07-28 15:30:50:3050 [32minfo[39m: [32m✅ Database connected successfully[39m
+2025-07-28 15:30:50:3050 [32minfo[39m: [32m✅ Database connection test passed[39m
+2025-07-28 15:30:50:3050 [32minfo[39m: [32mDatabase connected successfully[39m
+2025-07-28 15:30:50:3050 [32minfo[39m: [32mנ€ Server running on port 3004 in development mode[39m
+2025-07-28 15:30:50:3050 [32minfo[39m: [32mנ“ API documentation available at http://localhost:3004/api[39m
+2025-07-28 15:30:50:3050 [32minfo[39m: [32mנ¥ Health check available at http://localhost:3004/health[39m
+2025-07-28 15:30:50:3050 [32minfo[39m: [32mLoaded 0 MCP servers from database[39m
+2025-07-28 15:30:50:3050 [32minfo[39m: [32mMCP Service initialized[39m
+2025-07-28 15:31:19:3119 [33mwarn[39m: [33mALERT [high_memory_usage]: High memory usage: 86.90% High memory usage: 86.90%[39m
+2025-07-28 15:31:19:3119 [32minfo[39m: [32mAlert notification sent for: high_memory_usage[39m
+2025-07-28 15:31:49:3149 [33mwarn[39m: [33mALERT [high_memory_usage]: High memory usage: 86.82% High memory usage: 86.82%[39m
+2025-07-28 15:31:49:3149 [32minfo[39m: [32mAlert notification sent for: high_memory_usage[39m
+2025-07-28 15:32:19:3219 [33mwarn[39m: [33mALERT [high_memory_usage]: High memory usage: 86.43% High memory usage: 86.43%[39m
+2025-07-28 15:32:19:3219 [32minfo[39m: [32mAlert notification sent for: high_memory_usage[39m
+2025-07-28 15:32:49:3249 [33mwarn[39m: [33mALERT [high_memory_usage]: High memory usage: 86.62% High memory usage: 86.62%[39m
+2025-07-28 15:32:49:3249 [32minfo[39m: [32mAlert notification sent for: high_memory_usage[39m
+2025-07-28 15:33:19:3319 [33mwarn[39m: [33mALERT [high_memory_usage]: High memory usage: 88.93% High memory usage: 88.93%[39m
+2025-07-28 15:33:19:3319 [32minfo[39m: [32mAlert notification sent for: high_memory_usage[39m
+2025-07-28 15:33:49:3349 [33mwarn[39m: [33mALERT [high_memory_usage]: High memory usage: 87.22% High memory usage: 87.22%[39m
+2025-07-28 15:33:49:3349 [32minfo[39m: [32mAlert notification sent for: high_memory_usage[39m
+2025-07-28 15:34:19:3419 [33mwarn[39m: [33mALERT [high_memory_usage]: High memory usage: 87.31% High memory usage: 87.31%[39m
+2025-07-28 15:34:19:3419 [32minfo[39m: [32mAlert notification sent for: high_memory_usage[39m
+2025-07-28 15:34:49:3449 [33mwarn[39m: [33mALERT [high_memory_usage]: High memory usage: 87.19% High memory usage: 87.19%[39m
+2025-07-28 15:34:49:3449 [32minfo[39m: [32mAlert notification sent for: high_memory_usage[39m
+2025-07-28 15:35:12:3512 [32minfo[39m: [32m::1 - - [28/Jul/2025:12:35:12 +0000] "GET /health HTTP/1.1" 200 121 "-" "curl/8.12.1"[39m
+2025-07-28 15:35:17:3517 [32minfo[39m: [32m::1 - - [28/Jul/2025:12:35:17 +0000] "GET /api/auth/me HTTP/1.1" 401 51 "-" "curl/8.12.1"[39m
+2025-07-28 15:35:19:3519 [33mwarn[39m: [33mALERT [high_memory_usage]: High memory usage: 86.99% High memory usage: 86.99%[39m
+2025-07-28 15:35:19:3519 [32minfo[39m: [32mAlert notification sent for: high_memory_usage[39m
+2025-07-28 15:35:32:3532 [32minfo[39m: [32mUser logged in: admin@platform.com[39m
+2025-07-28 15:35:32:3532 [32minfo[39m: [32m::1 - - [28/Jul/2025:12:35:32 +0000] "POST /api/auth/login HTTP/1.1" 200 678 "-" "curl/8.12.1"[39m
+2025-07-28 15:35:38:3538 [33mwarn[39m: [33mToken verification failed:[39m
+2025-07-28 15:35:38:3538 [32minfo[39m: [32m::1 - - [28/Jul/2025:12:35:38 +0000] "GET /api/auth/me HTTP/1.1" 401 54 "-" "curl/8.12.1"[39m
+2025-07-28 15:35:49:3549 [33mwarn[39m: [33mALERT [high_memory_usage]: High memory usage: 86.95% High memory usage: 86.95%[39m
+2025-07-28 15:35:49:3549 [32minfo[39m: [32mAlert notification sent for: high_memory_usage[39m
+[32m[nodemon] restarting due to changes...[39m
+2025-07-28 15:35:59:3559 [32minfo[39m: [32mUser logged in: admin@platform.com[39m
+2025-07-28 15:35:59:3559 [32minfo[39m: [32m::1 - - [28/Jul/2025:12:35:59 +0000] "POST /api/auth/login HTTP/1.1" 200 678 "-" "curl/8.12.1"[39m
+2025-07-28 15:36:05:365 [33mwarn[39m: [33mToken verification failed:[39m
+2025-07-28 15:36:05:365 [32minfo[39m: [32m::1 - - [28/Jul/2025:12:36:05 +0000] "GET /api/auth/me HTTP/1.1" 401 54 "-" "curl/8.12.1"[39m
+2025-07-28 15:36:19:3619 [33mwarn[39m: [33mALERT [high_memory_usage]: High memory usage: 87.28% High memory usage: 87.28%[39m
+2025-07-28 15:36:19:3619 [32minfo[39m: [32mAlert notification sent for: high_memory_usage[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+2025-07-28 15:36:47:3647 [32minfo[39m: [32mUser logged in: admin@platform.com[39m
+2025-07-28 15:36:47:3647 [32minfo[39m: [32m::1 - - [28/Jul/2025:12:36:47 +0000] "POST /api/auth/login HTTP/1.1" 200 678 "-" "curl/8.12.1"[39m
+2025-07-28 15:36:49:3649 [33mwarn[39m: [33mALERT [high_memory_usage]: High memory usage: 87.47% High memory usage: 87.47%[39m
+2025-07-28 15:36:49:3649 [32minfo[39m: [32mAlert notification sent for: high_memory_usage[39m
+2025-07-28 15:36:54:3654 [33mwarn[39m: [33mToken verification failed:[39m
+2025-07-28 15:36:54:3654 [32minfo[39m: [32m::1 - - [28/Jul/2025:12:36:54 +0000] "GET /api/auth/me HTTP/1.1" 401 54 "-" "curl/8.12.1"[39m
+2025-07-28 15:37:19:3719 [33mwarn[39m: [33mALERT [high_memory_usage]: High memory usage: 86.82% High memory usage: 86.82%[39m
+2025-07-28 15:37:19:3719 [32minfo[39m: [32mAlert notification sent for: high_memory_usage[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+2025-07-28 15:37:49:3749 [33mwarn[39m: [33mALERT [high_memory_usage]: High memory usage: 86.82% High memory usage: 86.82%[39m
+2025-07-28 15:37:49:3749 [32minfo[39m: [32mAlert notification sent for: high_memory_usage[39m
+2025-07-28 15:37:57:3757 [33mwarn[39m: [33mToken verification failed:[39m
+2025-07-28 15:37:57:3757 [32minfo[39m: [32m::1 - - [28/Jul/2025:12:37:57 +0000] "GET /api/auth/me HTTP/1.1" 401 54 "-" "curl/8.12.1"[39m
+[32m[nodemon] restarting due to changes...[39m
+2025-07-28 15:38:19:3819 [33mwarn[39m: [33mALERT [high_memory_usage]: High memory usage: 86.84% High memory usage: 86.84%[39m
+2025-07-28 15:38:19:3819 [32minfo[39m: [32mAlert notification sent for: high_memory_usage[39m
+[32m[nodemon] restarting due to changes...[39m
+2025-07-28 15:38:26:3826 [33mwarn[39m: [33mToken verification failed:[39m
+2025-07-28 15:38:26:3826 [32minfo[39m: [32m::1 - - [28/Jul/2025:12:38:26 +0000] "GET /api/auth/me HTTP/1.1" 401 54 "-" "curl/8.12.1"[39m
+[32m[nodemon] restarting due to changes...[39m
+2025-07-28 15:38:49:3849 [33mwarn[39m: [33mALERT [high_memory_usage]: High memory usage: 87.35% High memory usage: 87.35%[39m
+2025-07-28 15:38:49:3849 [32minfo[39m: [32mAlert notification sent for: high_memory_usage[39m
+2025-07-28 15:38:53:3853 [33mwarn[39m: [33mToken verification failed:[39m
+2025-07-28 15:38:53:3853 [32minfo[39m: [32m::1 - - [28/Jul/2025:12:38:53 +0000] "GET /api/auth/me HTTP/1.1" 401 54 "-" "curl/8.12.1"[39m
+[32m[nodemon] restarting due to changes...[39m
+2025-07-28 15:39:19:3919 [33mwarn[39m: [33mALERT [high_memory_usage]: High memory usage: 87.21% High memory usage: 87.21%[39m
+2025-07-28 15:39:19:3919 [32minfo[39m: [32mAlert notification sent for: high_memory_usage[39m
+2025-07-28 15:39:20:3920 [32minfo[39m: [32mUser logged in: admin@platform.com[39m
+2025-07-28 15:39:20:3920 [32minfo[39m: [32m::1 - - [28/Jul/2025:12:39:20 +0000] "POST /api/auth/login HTTP/1.1" 200 678 "-" "curl/8.12.1"[39m
+2025-07-28 15:39:28:3928 [33mwarn[39m: [33mToken verification failed:[39m
+2025-07-28 15:39:28:3928 [32minfo[39m: [32m::1 - - [28/Jul/2025:12:39:28 +0000] "GET /api/auth/me HTTP/1.1" 401 54 "-" "curl/8.12.1"[39m
+2025-07-28 15:39:50:3950 [33mwarn[39m: [33mALERT [high_memory_usage]: High memory usage: 86.73% High memory usage: 86.73%[39m
+2025-07-28 15:39:50:3950 [32minfo[39m: [32mAlert notification sent for: high_memory_usage[39m
+[32m[nodemon] restarting due to changes...[39m
+2025-07-28 15:40:20:4020 [33mwarn[39m: [33mALERT [high_memory_usage]: High memory usage: 86.93% High memory usage: 86.93%[39m
+2025-07-28 15:40:20:4020 [32minfo[39m: [32mAlert notification sent for: high_memory_usage[39m
+2025-07-28 15:40:23:4023 [32minfo[39m: [32mUser logged in: admin@platform.com[39m
+2025-07-28 15:40:23:4023 [32minfo[39m: [32m::1 - - [28/Jul/2025:12:40:23 +0000] "POST /api/auth/login HTTP/1.1" 200 678 "-" "curl/8.12.1"[39m
+2025-07-28 15:40:30:4030 [33mwarn[39m: [33mToken verification failed:[39m
+2025-07-28 15:40:30:4030 [32minfo[39m: [32m::1 - - [28/Jul/2025:12:40:30 +0000] "GET /api/auth/me HTTP/1.1" 401 54 "-" "curl/8.12.1"[39m
+2025-07-28 15:40:41:4041 [33mwarn[39m: [33mToken verification failed:[39m
+2025-07-28 15:40:41:4041 [32minfo[39m: [32m::1 - - [28/Jul/2025:12:40:41 +0000] "GET /api/auth/me HTTP/1.1" 401 54 "-" "curl/8.12.1"[39m
+2025-07-28 15:40:50:4050 [33mwarn[39m: [33mALERT [high_memory_usage]: High memory usage: 88.11% High memory usage: 88.11%[39m
+2025-07-28 15:40:50:4050 [32minfo[39m: [32mAlert notification sent for: high_memory_usage[39m
+2025-07-28 15:41:20:4120 [33mwarn[39m: [33mALERT [high_memory_usage]: High memory usage: 88.17% High memory usage: 88.17%[39m
+2025-07-28 15:41:20:4120 [32minfo[39m: [32mAlert notification sent for: high_memory_usage[39m
+2025-07-28 15:41:46:4146 [33mwarn[39m: [33mToken verification failed:[39m
+2025-07-28 15:41:46:4146 [32minfo[39m: [32m::1 - - [28/Jul/2025:12:41:46 +0000] "GET /api/user/profile HTTP/1.1" 401 54 "http://localhost:3000/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0"[39m
+2025-07-28 15:41:50:4150 [33mwarn[39m: [33mALERT [high_memory_usage]: High memory usage: 88.35% High memory usage: 88.35%[39m
+2025-07-28 15:41:50:4150 [32minfo[39m: [32mAlert notification sent for: high_memory_usage[39m
+2025-07-28 15:42:20:4220 [33mwarn[39m: [33mALERT [high_memory_usage]: High memory usage: 87.35% High memory usage: 87.35%[39m
+2025-07-28 15:42:20:4220 [32minfo[39m: [32mAlert notification sent for: high_memory_usage[39m
+2025-07-28 15:42:50:4250 [33mwarn[39m: [33mALERT [high_memory_usage]: High memory usage: 86.97% High memory usage: 86.97%[39m
+2025-07-28 15:42:50:4250 [32minfo[39m: [32mAlert notification sent for: high_memory_usage[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+2025-07-28 15:43:20:4320 [33mwarn[39m: [33mALERT [high_memory_usage]: High memory usage: 95.66% High memory usage: 95.66%[39m
+2025-07-28 15:43:20:4320 [32minfo[39m: [32mAlert notification sent for: high_memory_usage[39m
+2025-07-28 15:43:25:4325 [32minfo[39m: [32mUser logged in: admin@platform.com[39m
+2025-07-28 15:43:25:4325 [32minfo[39m: [32m::1 - - [28/Jul/2025:12:43:25 +0000] "POST /api/auth/login HTTP/1.1" 200 678 "-" "curl/8.12.1"[39m
+2025-07-28 15:43:32:4332 [33mwarn[39m: [33mToken verification failed:[39m
+2025-07-28 15:43:32:4332 [32minfo[39m: [32m::1 - - [28/Jul/2025:12:43:32 +0000] "GET /api/auth/me HTTP/1.1" 401 54 "-" "curl/8.12.1"[39m
+2025-07-28 15:43:50:4350 [33mwarn[39m: [33mALERT [high_memory_usage]: High memory usage: 88.02% High memory usage: 88.02%[39m
+2025-07-28 15:43:50:4350 [32minfo[39m: [32mAlert notification sent for: high_memory_usage[39m
+[32m[nodemon] starting `node src/index.js`[39m

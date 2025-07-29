@@ -1,7 +1,12 @@
 'use client';
 
 // הגדרת Base URL עבור ה-API
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3004';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
+// Debug info
+if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+  console.log('API Base URL:', API_BASE_URL);
+}
 
 // Types עבור API responses
 interface ApiResponse<T = any> {
@@ -39,7 +44,7 @@ function getDefaultHeaders(): Record<string, string> {
 
   // הוספת token אם קיים
   if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+    const token = localStorage.getItem('authToken') || localStorage.getItem('auth_token');
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
@@ -57,7 +62,7 @@ function createTimeoutPromise(timeout: number): Promise<never> {
   });
 }
 
-// פונקציה לביצוע request עם retry logic
+// פונקציה לביצוע request עם retry logic ו-interceptors
 async function makeRequest<T>(
   url: string,
   config: RequestConfig = {}
@@ -96,6 +101,9 @@ async function makeRequest<T>(
 
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
+      // Request interceptor
+      console.log(`[API Request] ${method} ${fullUrl}`, { headers: requestHeaders, body });
+
       const fetchPromise = fetch(fullUrl, requestConfig);
       const timeoutPromise = createTimeoutPromise(timeout);
 
@@ -114,8 +122,9 @@ async function makeRequest<T>(
         throw error;
       }
 
-      // החזרת התוצאה
+      // Response interceptor
       const data = await response.json();
+      console.log(`[API Response] ${method} ${fullUrl}`, { status: response.status, data });
       return data;
 
     } catch (error: any) {
@@ -192,7 +201,11 @@ export const apiHelpers = {
 
   // רישום
   register: async (userData: any): Promise<any> => {
-    return api.post('/api/auth/register', userData, { auth: false });
+    const registerData = {
+      ...userData,
+      agreeTerms: true
+    };
+    return api.post('/api/auth/register', registerData, { auth: false });
   },
 
   // קבלת פרטי משתמש
@@ -213,9 +226,105 @@ export const apiHelpers = {
       // ניקוי local storage גם אם הבקשה נכשלה
       if (typeof window !== 'undefined') {
         localStorage.removeItem('authToken');
-        sessionStorage.removeItem('authToken');
+        localStorage.removeItem('auth_token');
       }
     }
+  },
+
+  // Chat API functions
+  chat: {
+    getSessions: () => api.get('/api/chat/sessions'),
+    getSession: (sessionId: string) => api.get(`/api/chat/sessions/${sessionId}`),
+    createSession: (data: { title?: string; model?: string }) => 
+      api.post('/api/chat/sessions', data),
+    updateSession: (sessionId: string, data: { title: string }) => 
+      api.patch(`/api/chat/sessions/${sessionId}`, data),
+    deleteSession: (sessionId: string) => 
+      api.delete(`/api/chat/sessions/${sessionId}`),
+    sendMessage: (data: { sessionId?: string; message: string; model?: string; stream?: boolean }) => 
+      api.post('/api/chat/message', data),
+    // Streaming chat with Server-Sent Events
+    streamMessage: async (
+      data: { sessionId?: string; message: string; model?: string }, 
+      onChunk?: (chunk: any) => void,
+      onComplete?: (response: any) => void,
+      onError?: (error: any) => void
+    ) => {
+      const fullUrl = `${API_BASE_URL}/api/chat/stream`;
+      const headers = getDefaultHeaders();
+      
+      const response = await fetch(fullUrl, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(data)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP ${response.status}`);
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error('Streaming not supported');
+      }
+
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          
+          if (done) {
+            break;
+          }
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
+
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              try {
+                const data = JSON.parse(line.slice(6));
+                
+                if (data.type === 'chunk') {
+                  onChunk?.(data);
+                } else if (data.type === 'complete') {
+                  onComplete?.(data);
+                } else if (data.type === 'error') {
+                  onError?.(new Error(data.error));
+                }
+              } catch (parseError) {
+                console.warn('Failed to parse SSE data:', parseError);
+              }
+            }
+          }
+        }
+      } finally {
+        reader.releaseLock();
+      }
+    },
+    getModels: () => api.get('/api/chat/models'),
+    getUsage: (period = 'month') => api.get(`/api/chat/usage?period=${period}`),
+    getAvailableTools: () => api.get('/api/chat/tools')
+  },
+
+  // MCP API functions
+  mcp: {
+    getServers: () => api.get('/api/mcp'),
+    getServer: (serverId: string) => api.get(`/api/mcp/${serverId}`),
+    createServer: (data: any) => api.post('/api/mcp', data),
+    updateServer: (serverId: string, data: any) => api.put(`/api/mcp/${serverId}`, data),
+    deleteServer: (serverId: string) => api.delete(`/api/mcp/${serverId}`),
+    startServer: (serverId: string) => api.post(`/api/mcp/${serverId}/start`),
+    stopServer: (serverId: string) => api.post(`/api/mcp/${serverId}/stop`),
+    executeTool: (serverId: string, data: { toolName: string; parameters?: any }) => 
+      api.post(`/api/mcp/${serverId}/execute`, data),
+    getLogs: (serverId: string, limit = 100) => 
+      api.get(`/api/mcp/${serverId}/logs?limit=${limit}`),
+    healthCheck: () => api.get('/api/mcp/health/check')
   }
 };
 
