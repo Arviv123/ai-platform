@@ -4,8 +4,9 @@ services:
     name: ai-platform-backend
     runtime: node
     plan: free
-    buildCommand: cd backend && npm install && npm run build && npx prisma generate && npx prisma migrate deploy
-    startCommand: cd backend && npm start
+    rootDir: backend
+    buildCommand: npm install && npm run build && npx prisma generate
+    startCommand: npm start
     healthCheckPath: /health
     envVars:
       - key: NODE_ENV

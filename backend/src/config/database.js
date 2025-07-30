@@ -53,7 +53,9 @@ prisma.$on('warn', (e) => {
 // Database connection function
 const connectDB = async () => {
   try {
-    if (!process.env.DATABASE_URL || process.env.DATABASE_URL.includes('postgresql://user:pass@localhost')) {
+    if (!process.env.DATABASE_URL || 
+        process.env.DATABASE_URL.includes('postgresql://user:pass@localhost') ||
+        process.env.DATABASE_URL.includes('file:')) {
       logger.warn('⚠️ Demo mode: No real database configured');
       logger.info('✅ Running in demo mode without database');
       return false;
@@ -68,7 +70,7 @@ const connectDB = async () => {
     return true;
     
   } catch (error) {
-    logger.error('❌ Database connection failed:', error);
+    logger.error('❌ Database connection failed:', error.message);
     logger.warn('⚠️ Falling back to demo mode');
     return false;
   }
