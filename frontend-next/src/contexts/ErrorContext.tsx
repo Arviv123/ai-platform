@@ -109,12 +109,13 @@ export function ErrorProvider({ children }: ErrorProviderProps) {
   const [state, dispatch] = useReducer(errorReducer, initialState);
 
   const addError = (error: Omit<AppError, 'id' | 'timestamp'>) => {
+    const errorWithId = { ...error, id: generateId(), timestamp: new Date() };
     dispatch({ type: 'ADD_ERROR', payload: error });
     
     // Auto-remove non-critical errors after 5 seconds
     if (error.severity !== 'critical') {
       setTimeout(() => {
-        dispatch({ type: 'REMOVE_ERROR', payload: error.id || '' });
+        dispatch({ type: 'REMOVE_ERROR', payload: errorWithId.id });
       }, 5000);
     }
   };
