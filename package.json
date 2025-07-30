@@ -1,40 +1,33 @@
 {
-  "name": "ai-platform",
-  "version": "1.0.0",
-  "description": "AI Platform with MCP Integration",
+  "name": "nedlan-ai-platform",
+  "version": "2.0.0",
+  "description": "פלטפורמה מקצועית לתכנון ובנייה בישראל",
   "private": true,
   "workspaces": [
-    "frontend",
-    "backend",
-    "mcp-manager"
+    "apps/*",
+    "packages/*"
   ],
   "scripts": {
-    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
-    "dev:frontend": "cd frontend && npm run dev",
-    "dev:backend": "cd backend && npm run dev",
-    "build": "npm run build:backend && npm run build:frontend",
-    "build:frontend": "cd frontend && npm run build",
-    "build:backend": "cd backend && npm run build",
-    "start": "cd backend && npm start",
-    "test": "npm run test:frontend && npm run test:backend",
-    "test:frontend": "cd frontend && npm test",
-    "test:backend": "cd backend && npm test",
-    "lint": "npm run lint:frontend && npm run lint:backend",
-    "lint:frontend": "cd frontend && npm run lint",
-    "lint:backend": "cd backend && npm run lint",
-    "install:all": "npm install && npm run install:frontend && npm run install:backend && npm run install:mcp",
-    "install:frontend": "cd frontend && npm install",
-    "install:backend": "cd backend && npm install",
-    "install:mcp": "cd mcp-manager && npm install",
-    "db:migrate": "cd backend && npx prisma migrate dev",
-    "db:seed": "cd backend && npx prisma db seed",
-    "db:studio": "cd backend && npx prisma studio",
-    "clean": "rimraf frontend/dist frontend/.next backend/dist node_modules",
-    "reset": "npm run clean && npm run install:all"
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "build:web": "turbo build --filter=web",
+    "build:api": "turbo build --filter=api",
+    "start": "turbo start",
+    "test": "turbo test",
+    "lint": "turbo lint",
+    "type-check": "turbo type-check",
+    "clean": "turbo clean",
+    "deploy:web": "cd apps/web && npm run deploy",
+    "deploy:api": "cd apps/api && npm run deploy",
+    "db:migrate": "cd apps/api && npx prisma migrate dev",
+    "db:seed": "cd apps/api && npx prisma db seed",
+    "db:studio": "cd apps/api && npx prisma studio"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2",
-    "rimraf": "^5.0.5"
+    "turbo": "^1.10.16",
+    "@turbo/gen": "^1.10.16",
+    "typescript": "^5.2.2",
+    "@types/node": "^20.8.0"
   },
   "engines": {
     "node": ">=20.0.0",
@@ -42,15 +35,17 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/yourusername/ai-platform.git"
+    "url": "git+https://github.com/yourusername/nedlan-ai-platform.git"
   },
   "keywords": [
+    "real-estate",
     "ai",
-    "mcp",
-    "claude",
-    "chat",
-    "platform"
+    "planning",
+    "construction",
+    "israel",
+    "nextjs",
+    "typescript"
   ],
-  "author": "Your Name",
+  "author": "Nedlan AI Team",
   "license": "UNLICENSED"
 }

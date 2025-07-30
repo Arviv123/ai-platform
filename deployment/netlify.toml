@@ -1,16 +1,16 @@
 # Netlify Configuration for נדל"ן AI Platform
-
 [build]
-  base = "frontend-next"
-  command = "npm install && npm run build"
-  publish = "frontend-next/out"
+  base = "apps/web"
+  command = "npm run build"
+  publish = "apps/web/dist"
 
 [build.environment]
   NODE_VERSION = "20"
   NEXT_TELEMETRY_DISABLED = "1"
-  NEXT_PUBLIC_API_URL = "https://ai-platform-backend.onrender.com"
+  NEXT_PUBLIC_API_URL = "https://nedlan-ai-api.onrender.com"
+  NEXT_PUBLIC_APP_NAME = "נדל\"ן AI Platform"
 
-# Redirect rules for SPA routing
+# SPA routing
 [[redirects]]
   from = "/*"
   to = "/index.html"
@@ -24,9 +24,9 @@
     X-XSS-Protection = "1; mode=block"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://ai-platform-backend.onrender.com"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
 
-# Cache static assets
+# Static assets caching
 [[headers]]
   for = "/static/*"
   [headers.values]
@@ -37,12 +37,12 @@
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
 
-# Context-specific settings  
+# Context-specific builds
 [context.production]
-  command = "cd frontend-next && npm install && npm run build"
+  command = "npm run build"
 
 [context.deploy-preview]
-  command = "cd frontend-next && npm install && npm run build"
+  command = "npm run build"
 
 [context.branch-deploy]
-  command = "cd frontend-next && npm install && npm run build"
+  command = "npm run build"

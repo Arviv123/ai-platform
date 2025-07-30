@@ -1,0 +1,503 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                     String          @id @default(cuid())
+  email                  String          @unique
+  password               String
+  firstName              String?
+  lastName               String?
+  role                   String          @default("USER")
+  organizationId         String?
+  mfaEnabled             Boolean         @default(false)
+  mfaSecret              String?
+  mfaBackupCodes         String?
+  emailVerified          Boolean         @default(false)
+  emailVerificationToken String?
+  passwordResetToken     String?
+  passwordResetExpires   DateTime?
+  lastLogin              DateTime?
+  loginAttempts          Int             @default(0)
+  lockUntil              DateTime?
+  preferences            String?
+  createdAt              DateTime        @default(now())
+  updatedAt              DateTime        @updatedAt
+  apiKeys                ApiKey[]
+  chatSessions           ChatSession[]
+  mcpServers             McpServer[]
+  securityEvents         SecurityEvent[]
+  toolExecutions         ToolExecution[]
+  conversationSummaries  ConversationSummary[]
+  longTermMemories       LongTermMemory[]
+  a2aMessages            A2AMessage[]    @relation("A2AMessageUser")
+  personalizationProfile PersonalizationProfile?
+  intelligenceMetrics    IntelligenceMetrics[]
+  organization           Organization?   @relation(fields: [organizationId], references: [id])
+
+  @@map("users")
+}
+
+model Organization {
+  id          String          @id @default(cuid())
+  name        String
+  description String?
+  plan        String          @default("FREE")
+  status      String          @default("ACTIVE")
+  settings    String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  apiKeys     ApiKey[]
+  invitations Invitation[]
+  users       User[]
+  subscription Subscription?
+  paymentMethods PaymentMethod[]
+
+  @@map("organizations")
+}
+
+model Invitation {
+  id             String       @id @default(cuid())
+  email          String
+  role           String       @default("USER")
+  status         String       @default("PENDING")
+  token          String       @unique
+  expiresAt      DateTime
+  organizationId String
+  invitedBy      String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  @@map("invitations")
+}
+
+model ChatSession {
+  id             String          @id @default(cuid())
+  userId         String
+  title          String
+  model          String
+  totalTokens    Int             @default(0)
+  messageCount   Int             @default(0)
+  metadata       String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  messages              ChatMessage[]
+  user                  User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  toolExecutions        ToolExecution[]
+  conversationSummaries ConversationSummary[]
+  longTermMemories      LongTermMemory[]
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([updatedAt])
+  @@map("chat_sessions")
+}
+
+model ChatMessage {
+  id        String      @id @default(cuid())
+  sessionId String
+  role      String
+  content   String
+  tokens    Int         @default(0)
+  model     String?
+  metadata  String?
+  createdAt DateTime    @default(now())
+  session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([createdAt])
+  @@map("chat_messages")
+}
+
+model ConversationSummary {
+  id               String      @id @default(cuid())
+  sessionId        String
+  userId           String
+  summaryText      String
+  summarizedUpTo   DateTime    // Last message timestamp included in summary
+  messageCount     Int         @default(0)
+  tokenCount       Int         @default(0)
+  summaryTokens    Int         @default(0)
+  isActive         Boolean     @default(true)
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+  session          ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user             User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([userId])
+  @@index([summarizedUpTo])
+  @@map("conversation_summaries")
+}
+
+model LongTermMemory {
+  id            String      @id @default(cuid())
+  userId        String
+  sessionId     String?     
+  memoryType    String      // PERSONAL, PREFERENCE, FACT, CONTEXT
+  content       String
+  importance    Float       @default(0.5) // 0.0 to 1.0 importance score
+  confidence    Float       @default(0.8) // Confidence in accuracy
+  accessCount   Int         @default(0)
+  lastAccessed  DateTime?
+  expiresAt     DateTime?   // Optional expiration
+  metadata      String?     // JSON metadata
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  session       ChatSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([sessionId])
+  @@index([memoryType])
+  @@index([importance])
+  @@index([lastAccessed])
+  @@map("long_term_memory")
+}
+
+model McpServer {
+  id              String        @id @default(cuid())
+  userId          String
+  name            String
+  description     String?
+  command         String
+  args            String        @default("[]")
+  env             String        @default("{}")
+  enabled         Boolean       @default(true)
+  healthStatus    String        @default("UNKNOWN")
+  totalCalls      Int           @default(0)
+  lastUsedAt      DateTime?
+  lastHealthCheck DateTime?
+  deletedAt       DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  toolCalls       McpToolCall[]
+
+  @@index([userId])
+  @@index([healthStatus])
+  @@index([enabled])
+  @@map("mcp_servers")
+}
+
+model McpToolCall {
+  id            String    @id @default(cuid())
+  serverId      String
+  toolName      String
+  parameters    String?
+  response      String?
+  success       Boolean   @default(false)
+  executionTime Int       @default(0)
+  errorMessage  String?
+  createdAt     DateTime  @default(now())
+  server        McpServer @relation(fields: [serverId], references: [id], onDelete: Cascade)
+
+  @@index([serverId])
+  @@index([createdAt])
+  @@map("mcp_tool_calls")
+}
+
+model ToolExecution {
+  id            String       @id @default(cuid())
+  serverId      String
+  userId        String
+  sessionId     String?
+  toolName      String
+  parameters    String
+  result        String?
+  executionTime Int          @default(0)
+  success       Boolean
+  error         String?
+  createdAt     DateTime     @default(now())
+  session       ChatSession? @relation(fields: [sessionId], references: [id])
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("tool_executions")
+}
+
+model ApiKey {
+  id             String        @id @default(cuid())
+  userId         String?
+  organizationId String?
+  name           String
+  keyHash        String        @unique
+  permissions    String?
+  lastUsedAt     DateTime?
+  lastUsedIp     String?
+  usageCount     Int           @default(0)
+  isActive       Boolean       @default(true)
+  expiresAt      DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([organizationId])
+  @@index([isActive])
+  @@map("api_keys")
+}
+
+model SecurityEvent {
+  id          String   @id @default(cuid())
+  userId      String
+  type        String
+  description String
+  ipAddress   String?
+  userAgent   String?
+  metadata    String?
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("security_events")
+}
+
+model SystemMetrics {
+  id        String   @id @default(cuid())
+  type      String
+  value     Float
+  unit      String
+  metadata  String?
+  timestamp DateTime @default(now())
+
+  @@map("system_metrics")
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  action     String
+  resource   String
+  resourceId String?
+  changes    String?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  @@map("audit_logs")
+}
+
+// SaaS Billing Models
+model Subscription {
+  id               String            @id @default(cuid())
+  organizationId   String            @unique
+  planId           String
+  stripeCustomerId String?           @unique
+  stripeSubId      String?           @unique
+  status           String            @default("TRIALING") // TRIALING, ACTIVE, CANCELED, PAST_DUE
+  currentPeriodEnd DateTime?
+  cancelAtPeriodEnd Boolean          @default(false)
+  trialEndsAt      DateTime?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  organization     Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  plan             SubscriptionPlan  @relation(fields: [planId], references: [id])
+  invoices         Invoice[]
+  usageRecords     UsageRecord[]
+
+  @@map("subscriptions")
+}
+
+model SubscriptionPlan {
+  id              String         @id @default(cuid())
+  name            String         @unique
+  displayName     String
+  description     String?
+  price           Float          // Price in cents
+  currency        String         @default("USD")
+  interval        String         @default("month") // month, year
+  features        String         // JSON string of features
+  maxUsers        Int            @default(5)
+  maxTokens       Int            @default(100000)
+  maxSessions     Int            @default(100)
+  maxApiCalls     Int            @default(1000)
+  isActive        Boolean        @default(true)
+  stripePriceId   String?        @unique
+  sortOrder       Int            @default(0)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  subscriptions   Subscription[]
+
+  @@map("subscription_plans")
+}
+
+model Invoice {
+  id               String       @id @default(cuid())
+  subscriptionId   String
+  stripeInvoiceId  String?      @unique
+  number           String       @unique
+  status           String       @default("DRAFT") // DRAFT, OPEN, PAID, VOID
+  total            Float        // Total in cents
+  subtotal         Float        // Subtotal in cents
+  currency         String       @default("USD")
+  periodStart      DateTime
+  periodEnd        DateTime
+  dueDate          DateTime?
+  paidAt           DateTime?
+  hostedInvoiceUrl String?
+  invoicePdf       String?
+  metadata         String?      // JSON metadata
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  subscription     Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@map("invoices")
+}
+
+model UsageRecord {
+  id             String       @id @default(cuid())
+  subscriptionId String
+  organizationId String
+  metricType     String       // tokens, api_calls, sessions, users
+  quantity       Int
+  timestamp      DateTime     @default(now())
+  metadata       String?      // JSON metadata
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@index([subscriptionId, metricType, timestamp])
+  @@map("usage_records")
+}
+
+model PaymentMethod {
+  id               String       @id @default(cuid())
+  organizationId   String
+  stripePaymentMethodId String  @unique
+  type             String       // card, bank_account
+  brand            String?      // visa, mastercard, etc
+  last4            String?
+  expMonth         Int?
+  expYear          Int?
+  isDefault        Boolean      @default(false)
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  organization     Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("payment_methods")
+}
+
+model Coupon {
+  id           String   @id @default(cuid())
+  code         String   @unique
+  type         String   // PERCENTAGE, FIXED_AMOUNT
+  value        Float    // Percentage (0-100) or amount in cents
+  maxUses      Int?     // null for unlimited
+  usedCount    Int      @default(0)
+  validFrom    DateTime @default(now())
+  validUntil   DateTime?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("coupons")
+}
+
+// A2A Protocol Models
+model A2AAgent {
+  id           String       @id @default(cuid())
+  agentId      String       @unique
+  name         String
+  type         String
+  capabilities String       // JSON string array
+  description  String
+  agentCard    String       // JSON string of agent card
+  status       String       @default("active")
+  lastSeen     DateTime     @default(now())
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  sentMessages A2AMessage[] @relation("A2AMessageFrom")
+  receivedMessages A2AMessage[] @relation("A2AMessageTo")
+  assignedTasks A2ATaskAgent[]
+
+  @@map("a2a_agents")
+}
+
+model A2ATask {
+  id                   String         @id @default(cuid())
+  taskId               String         @unique
+  name                 String
+  description          String
+  type                 String         @default("collaborative")
+  requiredCapabilities String       // JSON string array
+  status               String         @default("created")
+  priority             String         @default("medium")
+  deadline             DateTime?
+  context              String?        // JSON string
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+  assignedAgents       A2ATaskAgent[]
+  messages             A2AMessage[]   @relation("A2AMessageTask")
+
+  @@map("a2a_tasks")
+}
+
+model A2ATaskAgent {
+  id        String   @id @default(cuid())
+  taskId    String
+  agentId   String
+  role      String
+  assignedAt DateTime @default(now())
+  task      A2ATask  @relation(fields: [taskId], references: [taskId])
+  agent     A2AAgent @relation(fields: [agentId], references: [agentId])
+
+  @@unique([taskId, agentId])
+  @@map("a2a_task_agents")
+}
+
+model A2AMessage {
+  id          String    @id @default(cuid())
+  messageId   String    @unique
+  fromAgentId String
+  toAgentId   String
+  userId      String?
+  taskId      String?
+  type        String    @default("communication")
+  content     String    // JSON string
+  context     String?   // JSON string
+  artifacts   String?   // JSON string
+  createdAt   DateTime  @default(now())
+  fromAgent   A2AAgent  @relation("A2AMessageFrom", fields: [fromAgentId], references: [agentId])
+  toAgent     A2AAgent  @relation("A2AMessageTo", fields: [toAgentId], references: [agentId])
+  user        User?     @relation("A2AMessageUser", fields: [userId], references: [id])
+  task        A2ATask?  @relation("A2AMessageTask", fields: [taskId], references: [taskId])
+
+  @@map("a2a_messages")
+}
+
+// Advanced Intelligence Features
+model PersonalizationProfile {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  preferences       String   // JSON string with user preferences
+  learningStyle     String?  // visual, auditory, kinesthetic, etc.
+  communicationStyle String? // formal, casual, technical, etc.
+  interactionHistory String? // JSON string with interaction patterns
+  customInstructions String? // User-defined custom instructions
+  topicInterests    String?  // JSON string array of topics user is interested in
+  skillLevel        String?  // beginner, intermediate, advanced
+  goals             String?  // JSON string with user goals
+  adaptationData    String?  // JSON string with model adaptation data
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  user              User     @relation(fields: [userId], references: [id])
+
+  @@map("personalization_profiles")
+}
+
+model IntelligenceMetrics {
+  id                String   @id @default(cuid())
+  userId            String
+  sessionId         String
+  metricType        String   // reasoning_depth, creativity_score, technical_accuracy, etc.
+  value             Float
+  context           String?  // JSON string with context
+  timestamp         DateTime @default(now())
+  user              User     @relation(fields: [userId], references: [id])
+
+  @@map("intelligence_metrics")
+}
