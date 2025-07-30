@@ -282,8 +282,8 @@ const startServer = async () => {
     // Start HTTP server
     const server = app.listen(PORT, '0.0.0.0', () => {
       logger.info(`🚀 Server running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
-      logger.info(`📚 API documentation available at http://localhost:${PORT}/api`);
-      logger.info(`🏥 Health check available at http://localhost:${PORT}/health`);
+      logger.info(`📚 API documentation available at http://0.0.0.0:${PORT}/api`);
+      logger.info(`🏥 Health check available at http://0.0.0.0:${PORT}/health`);
       logger.info(`🌐 Server listening on all interfaces (0.0.0.0:${PORT})`);
     });
 

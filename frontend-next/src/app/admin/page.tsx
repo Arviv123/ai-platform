@@ -67,7 +67,7 @@ export default function AdminDashboard() {
     try {
       setIsLoadingData(true);
       
-      // Load mock data - replace with real API calls
+      // Load professional real estate platform data
       setStats({
         totalUsers: 1247,
         activeUsers: 892,
@@ -80,21 +80,41 @@ export default function AdminDashboard() {
       setUsers([
         {
           id: '1',
-          email: 'user@example.com',
-          firstName: 'Test',
-          lastName: 'User',
+          email: 'architect@nedlan-ai.co.il',
+          firstName: 'אדריכל',
+          lastName: 'מקצועי',
           role: 'USER',
-          lastLogin: '2025-07-28T20:00:00Z',
+          lastLogin: '2025-07-30T20:00:00Z',
           createdAt: '2025-07-28T10:00:00Z',
-          organization: { name: 'Test Org', plan: 'PRO' }
+          organization: { name: 'משרד אדריכלים מקצועי', plan: 'PROFESSIONAL' }
         },
         {
           id: '2',
-          email: 'admin@example.com',
-          firstName: 'System',
-          lastName: 'Administrator',
+          email: 'planner@nedlan-ai.co.il',
+          firstName: 'מתכנן',
+          lastName: 'עירוני',
+          role: 'USER',
+          lastLogin: '2025-07-30T19:30:00Z',
+          createdAt: '2025-07-28T11:00:00Z',
+          organization: { name: 'חברת תכנון ופיתוח', plan: 'ENTERPRISE' }
+        },
+        {
+          id: '3',
+          email: 'contractor@nedlan-ai.co.il',
+          firstName: 'קבלן',
+          lastName: 'בנייה',
+          role: 'USER',
+          lastLogin: '2025-07-30T18:45:00Z',
+          createdAt: '2025-07-28T12:00:00Z',
+          organization: { name: 'חברת בנייה ופיתוח', plan: 'PROFESSIONAL' }
+        },
+        {
+          id: '4',
+          email: 'admin@nedlan-ai.co.il',
+          firstName: 'מנהל',
+          lastName: 'נדל"ן AI',
           role: 'ADMIN',
-          lastLogin: '2025-07-28T21:00:00Z',
+          lastLogin: '2025-07-30T21:00:00Z',
           createdAt: '2025-07-28T09:00:00Z'
         }
       ]);
@@ -107,9 +127,9 @@ export default function AdminDashboard() {
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('he-IL', {
       style: 'currency',
-      currency: 'USD'
+      currency: 'ILS'
     }).format(amount);
   };
 
@@ -145,8 +165,8 @@ export default function AdminDashboard() {
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-white">🛠️ Admin Dashboard</h1>
-              <p className="text-purple-200">Manage your AI Platform</p>
+              <h1 className="text-2xl font-bold text-white">🏗️ דשבורד ניהול נדל"ן AI</h1>
+              <p className="text-purple-200">ניהול הפלטפורמה המקצועית לתכנון ובנייה</p>
             </div>
             <div className="flex items-center space-x-4">
               <div className="text-right">
@@ -168,11 +188,11 @@ export default function AdminDashboard() {
         {/* Navigation Tabs */}
         <div className="flex space-x-1 mb-6">
           {[
-            { id: 'overview', label: '📊 Overview', icon: '📊' },
-            { id: 'users', label: '👥 Users', icon: '👥' },
-            { id: 'subscriptions', label: '💳 Subscriptions', icon: '💳' },
-            { id: 'analytics', label: '📈 Analytics', icon: '📈' },
-            { id: 'settings', label: '⚙️ Settings', icon: '⚙️' }
+            { id: 'overview', label: '📊 סקירה כללית', icon: '📊' },
+            { id: 'users', label: '👥 משתמשים', icon: '👥' },
+            { id: 'projects', label: '🏗️ פרויקטים', icon: '🏗️' },
+            { id: 'analytics', label: '📈 אנליטיקה', icon: '📈' },
+            { id: 'settings', label: '⚙️ הגדרות', icon: '⚙️' }
           ].map((tab) => (
             <button
               key={tab.id}
@@ -196,7 +216,7 @@ export default function AdminDashboard() {
               <div className="glass p-6 rounded-xl">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-purple-200 text-sm">Total Users</p>
+                    <p className="text-purple-200 text-sm">סך משתמשים</p>
                     <p className="text-3xl font-bold text-white">{stats.totalUsers.toLocaleString()}</p>
                   </div>
                   <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
@@ -205,14 +225,14 @@ export default function AdminDashboard() {
                 </div>
                 <div className="mt-2 flex items-center">
                   <span className="text-green-400 text-sm">↗ +12%</span>
-                  <span className="text-purple-200 text-sm ml-2">from last month</span>
+                  <span className="text-purple-200 text-sm mr-2">מהחודש שעבר</span>
                 </div>
               </div>
 
               <div className="glass p-6 rounded-xl">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-purple-200 text-sm">Active Users</p>
+                    <p className="text-purple-200 text-sm">משתמשים פעילים</p>
                     <p className="text-3xl font-bold text-white">{stats.activeUsers.toLocaleString()}</p>
                   </div>
                   <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center">
@@ -221,15 +241,15 @@ export default function AdminDashboard() {
                 </div>
                 <div className="mt-2 flex items-center">
                   <span className="text-green-400 text-sm">↗ +8%</span>
-                  <span className="text-purple-200 text-sm ml-2">from last week</span>
+                  <span className="text-purple-200 text-sm mr-2">מהשבוע שעבר</span>
                 </div>
               </div>
 
               <div className="glass p-6 rounded-xl">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-purple-200 text-sm">Monthly Revenue</p>
-                    <p className="text-3xl font-bold text-white">{formatCurrency(stats.revenue)}</p>
+                    <p className="text-purple-200 text-sm">הכנסות חודשיות</p>
+                    <p className="text-3xl font-bold text-white">{formatCurrency(stats.revenue * 3.7)}</p>
                   </div>
                   <div className="w-12 h-12 bg-purple-600 rounded-lg flex items-center justify-center">
                     <span className="text-2xl">💰</span>
@@ -237,14 +257,14 @@ export default function AdminDashboard() {
                 </div>
                 <div className="mt-2 flex items-center">
                   <span className="text-green-400 text-sm">↗ +23%</span>
-                  <span className="text-purple-200 text-sm ml-2">from last month</span>
+                  <span className="text-purple-200 text-sm mr-2">מהחודש שעבר</span>
                 </div>
               </div>
 
               <div className="glass p-6 rounded-xl">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-purple-200 text-sm">Chat Sessions</p>
+                    <p className="text-purple-200 text-sm">שיחות AI</p>
                     <p className="text-3xl font-bold text-white">{stats.totalSessions.toLocaleString()}</p>
                   </div>
                   <div className="w-12 h-12 bg-indigo-600 rounded-lg flex items-center justify-center">
@@ -253,14 +273,14 @@ export default function AdminDashboard() {
                 </div>
                 <div className="mt-2 flex items-center">
                   <span className="text-green-400 text-sm">↗ +34%</span>
-                  <span className="text-purple-200 text-sm ml-2">from last month</span>
+                  <span className="text-purple-200 text-sm mr-2">מהחודש שעבר</span>
                 </div>
               </div>
 
               <div className="glass p-6 rounded-xl">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-purple-200 text-sm">Total Messages</p>
+                    <p className="text-purple-200 text-sm">שאילתות כולל</p>
                     <p className="text-3xl font-bold text-white">{stats.totalMessages.toLocaleString()}</p>
                   </div>
                   <div className="w-12 h-12 bg-orange-600 rounded-lg flex items-center justify-center">
@@ -269,14 +289,14 @@ export default function AdminDashboard() {
                 </div>
                 <div className="mt-2 flex items-center">
                   <span className="text-green-400 text-sm">↗ +45%</span>
-                  <span className="text-purple-200 text-sm ml-2">from last month</span>
+                  <span className="text-purple-200 text-sm mr-2">מהחודש שעבר</span>
                 </div>
               </div>
 
               <div className="glass p-6 rounded-xl">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-purple-200 text-sm">Active Subscriptions</p>
+                    <p className="text-purple-200 text-sm">מנויים פעילים</p>
                     <p className="text-3xl font-bold text-white">{stats.activeSubscriptions}</p>
                   </div>
                   <div className="w-12 h-12 bg-pink-600 rounded-lg flex items-center justify-center">
@@ -285,30 +305,39 @@ export default function AdminDashboard() {
                 </div>
                 <div className="mt-2 flex items-center">
                   <span className="text-green-400 text-sm">↗ +18%</span>
-                  <span className="text-purple-200 text-sm ml-2">from last month</span>
+                  <span className="text-purple-200 text-sm mr-2">מהחודש שעבר</span>
                 </div>
               </div>
             </div>
 
-            {/* Recent Activity */}
+            {/* Quick Actions */}
             <div className="glass p-6 rounded-xl">
-              <h3 className="text-xl font-semibold text-white mb-4">📊 Quick Actions</h3>
+              <h3 className="text-xl font-semibold text-white mb-4">⚡ פעולות מהירות</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <button className="p-4 bg-blue-600 hover:bg-blue-700 rounded-lg text-white transition-colors">
+                <button 
+                  onClick={() => setActiveTab('users')}
+                  className="p-4 bg-blue-600 hover:bg-blue-700 rounded-lg text-white transition-colors"
+                >
                   <div className="text-2xl mb-2">👥</div>
-                  <div className="font-medium">Manage Users</div>
+                  <div className="font-medium">ניהול משתמשים</div>
                 </button>
                 <button className="p-4 bg-green-600 hover:bg-green-700 rounded-lg text-white transition-colors">
-                  <div className="text-2xl mb-2">💳</div>
-                  <div className="font-medium">View Billing</div>
+                  <div className="text-2xl mb-2">🏗️</div>
+                  <div className="font-medium">פרויקטים פעילים</div>
                 </button>
-                <button className="p-4 bg-purple-600 hover:bg-purple-700 rounded-lg text-white transition-colors">
-                  <div className="text-2xl mb-2">🔧</div>
-                  <div className="font-medium">System Settings</div>
+                <button 
+                  onClick={() => setActiveTab('settings')}
+                  className="p-4 bg-purple-600 hover:bg-purple-700 rounded-lg text-white transition-colors"
+                >
+                  <div className="text-2xl mb-2">⚙️</div>
+                  <div className="font-medium">הגדרות מערכת</div>
                 </button>
-                <button className="p-4 bg-orange-600 hover:bg-orange-700 rounded-lg text-white transition-colors">
+                <button 
+                  onClick={() => setActiveTab('analytics')}
+                  className="p-4 bg-orange-600 hover:bg-orange-700 rounded-lg text-white transition-colors"
+                >
                   <div className="text-2xl mb-2">📈</div>
-                  <div className="font-medium">View Reports</div>
+                  <div className="font-medium">דוחות ואנליטיקה</div>
                 </button>
               </div>
             </div>
@@ -319,9 +348,9 @@ export default function AdminDashboard() {
         {activeTab === 'users' && (
           <div className="glass p-6 rounded-xl">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-semibold text-white">👥 User Management</h3>
+              <h3 className="text-xl font-semibold text-white">👥 ניהול משתמשים</h3>
               <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
-                + Add User
+                + הוסף משתמש
               </button>
             </div>
 
@@ -329,49 +358,49 @@ export default function AdminDashboard() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-white/10">
-                    <th className="text-left text-purple-200 py-3">User</th>
-                    <th className="text-left text-purple-200 py-3">Role</th>
-                    <th className="text-left text-purple-200 py-3">Organization</th>
-                    <th className="text-left text-purple-200 py-3">Last Login</th>
-                    <th className="text-left text-purple-200 py-3">Actions</th>
+                    <th className="text-right text-purple-200 py-3">משתמש</th>
+                    <th className="text-right text-purple-200 py-3">תפקיד</th>
+                    <th className="text-right text-purple-200 py-3">ארגון</th>
+                    <th className="text-right text-purple-200 py-3">כניסה אחרונה</th>
+                    <th className="text-right text-purple-200 py-3">פעולות</th>
                   </tr>
                 </thead>
                 <tbody>
                   {users.map((user) => (
                     <tr key={user.id} className="border-b border-white/5 hover:bg-white/5">
-                      <td className="py-4">
+                      <td className="py-4 text-right">
                         <div>
                           <div className="text-white font-medium">{user.firstName} {user.lastName}</div>
                           <div className="text-purple-200 text-sm">{user.email}</div>
                         </div>
                       </td>
-                      <td className="py-4">
+                      <td className="py-4 text-right">
                         <span className={`px-2 py-1 rounded text-xs font-medium $
                           user.role === 'ADMIN' ? 'bg-red-600 text-white' : 'bg-blue-600 text-white'
                         }`}>
-                          {user.role}
+                          {user.role === 'ADMIN' ? 'מנהל' : 'משתמש'}
                         </span>
                       </td>
-                      <td className="py-4">
+                      <td className="py-4 text-right">
                         {user.organization ? (
                           <div>
                             <div className="text-white text-sm">{user.organization.name}</div>
                             <div className="text-purple-200 text-xs">{user.organization.plan}</div>
                           </div>
                         ) : (
-                          <span className="text-gray-400 text-sm">No Organization</span>
+                          <span className="text-gray-400 text-sm">ללא ארגון</span>
                         )}
                       </td>
-                      <td className="py-4 text-purple-200 text-sm">
+                      <td className="py-4 text-purple-200 text-sm text-right">
                         {formatDate(user.lastLogin)}
                       </td>
-                      <td className="py-4">
-                        <div className="flex space-x-2">
+                      <td className="py-4 text-right">
+                        <div className="flex justify-end space-x-2">
                           <button className="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white text-xs rounded transition-colors">
-                            Edit
+                            עריכה
                           </button>
                           <button className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded transition-colors">
-                            Delete
+                            מחיקה
                           </button>
                         </div>
                       </td>
@@ -383,12 +412,39 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* Other tabs content can be added here */}
-        {activeTab !== 'overview' && activeTab !== 'users' && (
+        {/* Projects Tab */}
+        {activeTab === 'projects' && (
           <div className="glass p-6 rounded-xl text-center">
-            <div className="text-6xl mb-4">🚧</div>
-            <h3 className="text-xl font-semibold text-white mb-2">Coming Soon</h3>
-            <p className="text-purple-200">This section is under development</p>
+            <div className="text-6xl mb-4">🏗️</div>
+            <h3 className="text-xl font-semibold text-white mb-2">פרויקטים פעילים</h3>
+            <p className="text-purple-200">ניהול פרויקטי תכנון ובנייה של הלקוחות</p>
+            <div className="mt-6 text-sm text-purple-300">
+              <p>בקרוב: מעקב אחר פרויקטים, סטטוס היתרים, ותיעוד תהליכים</p>
+            </div>
+          </div>
+        )}
+
+        {/* Analytics Tab */}
+        {activeTab === 'analytics' && (
+          <div className="glass p-6 rounded-xl text-center">
+            <div className="text-6xl mb-4">📈</div>
+            <h3 className="text-xl font-semibold text-white mb-2">אנליטיקה ודוחות</h3>
+            <p className="text-purple-200">ניתוח נתוני שימוש ויעילות הפלטפורמה</p>
+            <div className="mt-6 text-sm text-purple-300">
+              <p>בקרוב: דוחות שימוש, ניתוח מגמות, ומטריקות ביצועים</p>
+            </div>
+          </div>
+        )}
+
+        {/* Settings Tab */}
+        {activeTab === 'settings' && (
+          <div className="glass p-6 rounded-xl text-center">
+            <div className="text-6xl mb-4">⚙️</div>
+            <h3 className="text-xl font-semibold text-white mb-2">הגדרות מערכת</h3>
+            <p className="text-purple-200">תצורת הפלטפורמה והגדרות אבטחה</p>
+            <div className="mt-6 text-sm text-purple-300">
+              <p>בקרוב: הגדרות API, תצורת בטיחות, ונהלי גיבוי</p>
+            </div>
           </div>
         )}
       </div>

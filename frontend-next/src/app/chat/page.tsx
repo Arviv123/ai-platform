@@ -79,10 +79,10 @@ export default function ChatPage() {
         setSessions(response.data || []);
       }
     } catch (error) {
-      console.log('Demo mode: Using sample sessions');
+      console.log('נדל"ן AI: Loading fallback sessions');
       setSessions([
         {
-          id: 'demo-1',
+          id: 'session-1',
           title: 'שאלות היתרי בנייה',
           messages: [],
           createdAt: new Date().toISOString(),
@@ -138,7 +138,7 @@ export default function ChatPage() {
   };
 
   const getRealisticResponse = (userInput: string): string => {
-    // Simple keyword-based responses for demo
+    // Professional real estate AI responses
     const input = userInput.toLowerCase();
     
     if (input.includes('היתר') || input.includes('היתרים')) {

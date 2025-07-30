@@ -6,17 +6,17 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🌱 Starting database seeding...');
 
-  // Create admin user
-  const adminPassword = await bcrypt.hash('admin123', 12);
+  // Create admin user - מנהל הפלטפורמה
+  const adminPassword = await bcrypt.hash('Admin2024!', 12);
   
   const admin = await prisma.user.upsert({
-    where: { email: 'admin@platform.com' },
+    where: { email: 'admin@nedlan-ai.co.il' },
     update: {},
     create: {
-      email: 'admin@platform.com',
+      email: 'admin@nedlan-ai.co.il',
       password: adminPassword,
       firstName: 'מנהל',
-      lastName: 'המערכת',
+      lastName: 'נדל"ן AI',
       role: 'ADMIN',
       emailVerified: true
     }
@@ -24,40 +24,51 @@ async function main() {
 
   console.log('✅ Admin user created:', admin.email);
 
-  // Create demo users
-  const demoUsers = [
+  // Create professional users - משתמשים מקצועיים
+  const professionalUsers = [
     {
-      email: 'user1@example.com',
-      firstName: 'חיים',
-      lastName: 'לוי'
+      email: 'architect@nedlan-ai.co.il',
+      firstName: 'אדריכל',
+      lastName: 'מקצועי',
+      password: 'Architect2024!'
     },
     {
-      email: 'user2@demo.com',
-      firstName: 'שרה',
-      lastName: 'כהן'
+      email: 'planner@nedlan-ai.co.il', 
+      firstName: 'מתכנן',
+      lastName: 'עירוני',
+      password: 'Planner2024!'
     },
     {
-      email: 'test@platform.com',
-      firstName: 'יוסי',
-      lastName: 'דוד'
+      email: 'contractor@nedlan-ai.co.il',
+      firstName: 'קבלן',
+      lastName: 'בנייה',
+      password: 'Builder2024!'
+    },
+    {
+      email: 'investor@nedlan-ai.co.il',
+      firstName: 'משקיע',
+      lastName: 'נדלן',
+      password: 'Investor2024!'
     }
   ];
 
-  for (const userData of demoUsers) {
-    const userPassword = await bcrypt.hash('demo123', 12);
+  for (const userData of professionalUsers) {
+    const userPassword = await bcrypt.hash(userData.password, 12);
     
     const user = await prisma.user.upsert({
       where: { email: userData.email },
       update: {},
       create: {
-        ...userData,
+        email: userData.email,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
         password: userPassword,
         role: 'USER',
         emailVerified: true
       }
     });
 
-    console.log('✅ Demo user created:', user.email);
+    console.log('✅ Professional user created:', user.email);
   }
 
   console.log('ℹ️ Basic user setup completed');
