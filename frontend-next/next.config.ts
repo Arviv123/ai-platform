@@ -22,7 +22,7 @@ const nextConfig: NextConfig = {
   env: {
     NEXT_PUBLIC_API_URL: process.env.NODE_ENV === 'production' 
       ? 'https://ai-platform-backend.railway.app' 
-      : process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001',
+      : process.env.NEXT_PUBLIC_API_URL || 'https://ai-platform-backend.railway.app',
   },
   
   // Disable telemetry to avoid trace file issues

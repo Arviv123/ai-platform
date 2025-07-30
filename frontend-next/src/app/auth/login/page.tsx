@@ -61,13 +61,13 @@ export default function LoginPage() {
   const handleGoogleLogin = () => {
     showToast('יועבר לאימות Google...', 'info');
     // In production, this would redirect to Google OAuth
-    window.location.href = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/auth/google`;
+    window.location.href = `${process.env.NEXT_PUBLIC_API_URL || 'https://ai-platform-backend.railway.app'}/api/auth/google`;
   };
 
   const handleFacebookLogin = () => {
     showToast('יועבר לאימות Facebook...', 'info');
     // In production, this would redirect to Facebook OAuth
-    window.location.href = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/auth/facebook`;
+    window.location.href = `${process.env.NEXT_PUBLIC_API_URL || 'https://ai-platform-backend.railway.app'}/api/auth/facebook`;
   };
 
   if (isLoading) {

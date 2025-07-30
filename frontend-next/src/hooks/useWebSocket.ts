@@ -52,7 +52,7 @@ export function useWebSocket(options: WebSocketOptions = {}) {
     if (!token) return null;
     
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host = process.env.NEXT_PUBLIC_API_URL?.replace(/^https?:\/\//, '') || 'localhost:3001';
+    const host = 'ai-platform-backend.railway.app';
     return `${protocol}//${host}/ws?token=${encodeURIComponent(token)}`;
   }, []);
 
