@@ -9,7 +9,7 @@ if (typeof window !== 'undefined' && !API_BASE_URL.startsWith('http')) {
 }
 
 // Check if we're in static/demo mode
-const isStaticMode = true; // Enable static mode since backend is not deployed yet
+const isStaticMode = false; // Disable static mode to use real backend
 
 // Debug info
 if (typeof window !== 'undefined') {

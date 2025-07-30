@@ -116,7 +116,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Login function
   const login = async (email: string, password: string, mfaToken?: string) => {
     try {
-      const response = await fetch(`${API_BASE}/api/auth/login`, {
+      const response = await apiCall('/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -153,7 +153,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Register function
   const register = async (email: string, password: string, firstName?: string, lastName?: string) => {
     try {
-      const response = await fetch(`${API_BASE}/api/auth/register`, {
+      const response = await apiCall('/api/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
