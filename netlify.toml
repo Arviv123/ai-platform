@@ -19,7 +19,7 @@
   NEXT_TELEMETRY_DISABLED = "1"
   
   # API Configuration
-  NEXT_PUBLIC_API_URL = "https://ai-platform-backend.railway.app"
+  NEXT_PUBLIC_API_URL = "https://ai-platform-backend.onrender.com"
 
 # Redirect rules for SPA routing
 [[redirects]]
@@ -35,7 +35,7 @@
     X-XSS-Protection = "1; mode=block"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://api.anthropic.com https://api.openai.com https://ai-platform-backend.railway.app"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://api.anthropic.com https://api.openai.com https://ai-platform-backend.onrender.com"
 
 # Cache static assets
 [[headers]]
