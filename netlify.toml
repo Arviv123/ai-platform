@@ -3,7 +3,7 @@
 [build]
   base = "frontend-next"
   command = "npm install && npm run build"
-  publish = "out"
+  publish = "frontend-next/out"
 
 [build.environment]
   NODE_VERSION = "20"
@@ -37,15 +37,12 @@
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
 
-# Context-specific settings
+# Context-specific settings  
 [context.production]
-  base = "frontend-next"
-  command = "npm install && npm run build"
+  command = "cd frontend-next && npm install && npm run build"
 
 [context.deploy-preview]
-  base = "frontend-next"
-  command = "npm install && npm run build"
+  command = "cd frontend-next && npm install && npm run build"
 
 [context.branch-deploy]
-  base = "frontend-next"
-  command = "npm install && npm run build"
+  command = "cd frontend-next && npm install && npm run build"
