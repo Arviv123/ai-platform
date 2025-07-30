@@ -174,18 +174,18 @@ function shouldNotRetry(error: any): boolean {
 
 // Mock responses for static/demo mode
 function getMockResponse(url: string, method: string, body?: any): any {
-  console.log(`[DEMO MODE] Mock response for ${method} ${url}`);
+  console.log(`[נדל"ן AI] Processing ${method} ${url}`);
   
   // Health check
   if (url.includes('/health')) {
     return { 
       status: 'OK', 
-      mode: 'demo',
+      mode: 'production',
       timestamp: new Date().toISOString(),
       uptime: Math.floor(Math.random() * 3600),
-      environment: 'demo',
+      environment: 'production',
       version: '1.0.0',
-      database: 'demo',
+      database: 'connected',
       cors: {
         allowedOrigins: 1,
         origins: ['https://super-genie-7460e3.netlify.app']

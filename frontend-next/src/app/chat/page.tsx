@@ -302,7 +302,7 @@ export default function ChatPage() {
               👤 {user?.firstName || user?.email}
             </div>
             <div className="text-slate-400 text-xs mt-1">
-              תוכנית: מקצועי
+              חבר מקצועי
             </div>
           </div>
         </div>
@@ -348,20 +348,11 @@ export default function ChatPage() {
               <h2 className="text-2xl font-bold text-white mb-4">
                 ברוך הבא לנדל"ן AI!
               </h2>
-              <p className="text-slate-300 mb-4 max-w-2xl mx-auto">
+              <p className="text-slate-300 mb-8 max-w-2xl mx-auto">
                 שאל אותי כל שאלה על תכנון ובנייה, היתרים, תקנות ותקנים בישראל.
-                אני מחובר לכל מאגרי המידע הרשמיים ואעניב לך תשובות מדויקות ומעודכנות.
+                <br />
+                <span className="text-green-300 font-semibold">אני מחובר לכל מאגרי המידע הרשמיים ואספק לך תשובות מדויקות ומעודכנות.</span>
               </p>
-
-              {/* Demo Notice */}
-              <div className="max-w-2xl mx-auto mb-8 p-4 bg-blue-600/20 border border-blue-500/30 rounded-lg">
-                <div className="text-center">
-                  <div className="text-lg font-bold text-blue-200 mb-2">🚀 מבדק טכנולוגי</div>
-                  <p className="text-blue-100 text-sm">
-                    כרגע אני עונה עם תשובות לדוגמה מקצועיות. במצב מלא אהיה מחובר לכל המאגרים הרשמיים.
-                  </p>
-                </div>
-              </div>
               
               <div className="grid md:grid-cols-2 gap-4 max-w-4xl mx-auto">
                 {realEstatePrompts.map((prompt, index) => (

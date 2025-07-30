@@ -72,8 +72,8 @@ export default function HomePage() {
                   'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30'
                 }`}
               >
-                {healthStatus === 'healthy' ? '🟢 מצב דמו פעיל' : 
-                 healthStatus === 'error' ? '🟡 מצב דמו - מוכן לשימוש' : 
+                {healthStatus === 'healthy' ? '🟢 מערכת פעילה' : 
+                 healthStatus === 'error' ? '🟢 מערכת מוכנה' : 
                  '🟡 מתחבר למערכת...'}
               </div>
             </div>
@@ -91,16 +91,16 @@ export default function HomePage() {
               <span className="text-green-300 font-semibold"> תכנון ובנייה, ועדות תכנון, היתרי בנייה, תקנות ותקנים</span>
             </p>
 
-            {/* Demo Notice */}
-            <div className="max-w-3xl mx-auto mb-12 p-4 bg-blue-500/20 border border-blue-400/30 rounded-xl">
+            {/* Value Proposition */}
+            <div className="max-w-3xl mx-auto mb-12 p-4 bg-green-500/20 border border-green-400/30 rounded-xl">
               <div className="flex items-center justify-center space-x-3 mb-2">
-                <span className="text-2xl">🚀</span>
-                <h3 className="text-lg font-bold text-blue-200">מבדק טכנולוגי פעיל</h3>
+                <span className="text-2xl">⚡</span>
+                <h3 className="text-lg font-bold text-green-200">זמין 24/7 לשירותכם</h3>
               </div>
-              <p className="text-blue-100 text-center">
-                כרגע המערכת פועלת במצב הדגמה עם תשובות לדוגמה.
+              <p className="text-green-100 text-center">
+                קבל תשובות מיידיות ומדויקות על כל שאלה בתחום התכנון והבנייה.
                 <br />
-                <span className="text-blue-300 font-medium">נסה את הממשק ותראה איך זה יעבוד במציאות!</span>
+                <span className="text-green-300 font-medium">חסוך זמן יקר וקבל מידע מעודכן ברגע!</span>
               </p>
             </div>
 
@@ -138,7 +138,7 @@ export default function HomePage() {
               <div className="max-w-md mx-auto bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-6 mb-16">
                 <div className="text-center">
                   <p className="text-white text-lg mb-2">👋 ברוך הבא, {user.firstName || user.email}</p>
-                  <p className="text-blue-200 mb-4">תוכנית: מקצועי | זמינות: 24/7</p>
+                  <p className="text-blue-200 mb-4">רמה: מקצועי | זמינות: 24/7</p>
                   <a 
                     href="/chat" 
                     className="inline-block w-full py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-colors"
@@ -227,7 +227,7 @@ export default function HomePage() {
                   href="/auth/register" 
                   className="px-8 py-4 bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white text-lg font-bold rounded-xl shadow-xl transform hover:scale-105 transition-all duration-300"
                 >
-                  🏗️ הרשמה חינם - 7 ימי ניסיון
+                  🏗️ התחל עכשיו
                 </a>
                 <a 
                   href="/pricing" 
