@@ -2,7 +2,7 @@
 
 [build]
   # Build command for Next.js static export
-  command = "cd frontend-next && npm run build"
+  command = "cd frontend-next && npm install && npm run build"
   
   # Output directory (Next.js static export)
   publish = "frontend-next/out"
@@ -47,13 +47,13 @@
 
 # Environment-specific settings
 [context.production]
-  command = "cd frontend-next && npm run build"
+  command = "cd frontend-next && npm install && npm run build"
   
 [context.deploy-preview]
-  command = "cd frontend-next && npm run build"
+  command = "cd frontend-next && npm install && npm run build"
 
 [context.branch-deploy]
-  command = "cd frontend-next && npm run build"
+  command = "cd frontend-next && npm install && npm run build"
 
 # Plugin configurations
 [[plugins]]
