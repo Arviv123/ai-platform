@@ -72,8 +72,8 @@ export default function HomePage() {
                   'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30'
                 }`}
               >
-                {healthStatus === 'healthy' ? '🟢 מערכת פעילה' : 
-                 healthStatus === 'error' ? '🔴 בבדיקה...' : 
+                {healthStatus === 'healthy' ? '🟢 מצב דמו פעיל' : 
+                 healthStatus === 'error' ? '🟡 מצב דמו - מוכן לשימוש' : 
                  '🟡 מתחבר למערכת...'}
               </div>
             </div>
@@ -86,10 +86,23 @@ export default function HomePage() {
               <span className="text-white">לתכנון ובנייה</span>
             </h1>
 
-            <p className="text-xl md:text-2xl text-blue-100 mb-12 leading-relaxed max-w-4xl mx-auto">
+            <p className="text-xl md:text-2xl text-blue-100 mb-8 leading-relaxed max-w-4xl mx-auto">
               מערכת AI מתקדמת המחוברת לכל מאגרי המידע הישראליים: 
               <span className="text-green-300 font-semibold"> תכנון ובנייה, ועדות תכנון, היתרי בנייה, תקנות ותקנים</span>
             </p>
+
+            {/* Demo Notice */}
+            <div className="max-w-3xl mx-auto mb-12 p-4 bg-blue-500/20 border border-blue-400/30 rounded-xl">
+              <div className="flex items-center justify-center space-x-3 mb-2">
+                <span className="text-2xl">🚀</span>
+                <h3 className="text-lg font-bold text-blue-200">מבדק טכנולוגי פעיל</h3>
+              </div>
+              <p className="text-blue-100 text-center">
+                כרגע המערכת פועלת במצב הדגמה עם תשובות לדוגמה.
+                <br />
+                <span className="text-blue-300 font-medium">נסה את הממשק ותראה איך זה יעבוד במציאות!</span>
+              </p>
+            </div>
 
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-16">

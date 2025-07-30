@@ -9,7 +9,7 @@ if (typeof window !== 'undefined' && !API_BASE_URL.startsWith('http')) {
 }
 
 // Check if we're in static/demo mode
-const isStaticMode = false; // Disable static mode to use real backend
+const isStaticMode = true; // Enable static mode since backend is not deployed yet
 
 // Debug info
 if (typeof window !== 'undefined') {
@@ -178,7 +178,19 @@ function getMockResponse(url: string, method: string, body?: any): any {
   
   // Health check
   if (url.includes('/health')) {
-    return { status: 'healthy', mode: 'demo' };
+    return { 
+      status: 'OK', 
+      mode: 'demo',
+      timestamp: new Date().toISOString(),
+      uptime: Math.floor(Math.random() * 3600),
+      environment: 'demo',
+      version: '1.0.0',
+      database: 'demo',
+      cors: {
+        allowedOrigins: 1,
+        origins: ['https://super-genie-7460e3.netlify.app']
+      }
+    };
   }
   
   // Auth endpoints
