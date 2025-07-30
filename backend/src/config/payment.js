@@ -5,18 +5,18 @@ const logger = require('../utils/logger');
 const SUBSCRIPTION_PLANS = {
   free: {
     id: 'free',
-    name: 'חינם',
+    name: 'Free',
     price: 0,
     credits: 100,
-    features: ['צ'אט בסיסי', '100 קרדיטים חינם'],
+    features: ['Chat basic', '100 free credits'],
     maxModels: 1
   },
   basic: {
     id: 'basic',
-    name: 'בסיסי',
+    name: 'Basic',
     price: 29,
     credits: 1000,
-    features: ['כל המודלים', '1000 קרדיטים', 'תמיכה באימייל'],
+    features: ['All models', '1000 credits', 'Email support'],
     maxModels: 3,
     stripeProductId: 'prod_basic'
   },

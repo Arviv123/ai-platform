@@ -1,16 +1,10 @@
 'use client';
 
 // הגדרת Base URL עבור ה-API
-// בפרודקשן (static), נשתמש במצב demo ללא שרת
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || (
-  typeof window !== 'undefined' && window.location.hostname !== 'localhost' 
-    ? '/api' // Static mode - will be handled by mock responses
-    : 'http://localhost:3001' // Development mode
-);
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 // Check if we're in static/demo mode
-const isStaticMode = typeof window !== 'undefined' && 
-  (window.location.hostname !== 'localhost' && !API_BASE_URL.startsWith('http'));
+const isStaticMode = false; // Disable static mode to use real backend
 
 // Debug info
 if (typeof window !== 'undefined') {

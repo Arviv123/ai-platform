@@ -17,6 +17,9 @@
   
   # Next.js configuration
   NEXT_TELEMETRY_DISABLED = "1"
+  
+  # API Configuration
+  NEXT_PUBLIC_API_URL = "https://ai-platform-backend.railway.app"
 
 # Redirect rules for SPA routing
 [[redirects]]
