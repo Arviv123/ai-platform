@@ -64,5 +64,6 @@
   # Enable Netlify Forms
   
 # Edge functions (if needed in future)
-[edge_functions]
-  # Edge function configurations
+# [[edge_functions]]
+#   path = "/api"
+#   function = "api-handler"
