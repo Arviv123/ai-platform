@@ -2,10 +2,11 @@
 
 [build]
   # Build command for Next.js static export
-  command = "cd frontend-next && npm install && npm run build"
+  base = "frontend-next"
+  command = "npm install && npm run build"
   
   # Output directory (Next.js static export)
-  publish = "frontend-next/out"
+  publish = "out"
   
   # Functions directory (if needed later)
   functions = "netlify/functions"
@@ -47,13 +48,16 @@
 
 # Environment-specific settings
 [context.production]
-  command = "cd frontend-next && npm install && npm run build"
+  base = "frontend-next"
+  command = "npm install && npm run build"
   
 [context.deploy-preview]
-  command = "cd frontend-next && npm install && npm run build"
+  base = "frontend-next"
+  command = "npm install && npm run build"
 
 [context.branch-deploy]
-  command = "cd frontend-next && npm install && npm run build"
+  base = "frontend-next"
+  command = "npm install && npm run build"
 
 # Plugin configurations
 [[plugins]]
