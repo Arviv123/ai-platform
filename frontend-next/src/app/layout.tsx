@@ -18,9 +18,9 @@ const firaCode = Fira_Code({
 });
 
 export const metadata: Metadata = {
-  title: "AI Platform - Enterprise AI Management",
-  description: "Advanced AI platform with MCP integration, multi-tenancy, and enterprise security",
-  keywords: ["AI", "MCP", "Enterprise", "Machine Learning", "Artificial Intelligence"],
+  title: "נדל\"ן AI - עוזרך החכם לתכנון ובנייה בישראל",
+  description: "מערכת AI מתקדמת המחוברת לכל מאגרי המידע הישראליים: תכנון ובנייה, ועדות תכנון, היתרי בנייה, תקנות ותקנים",
+  keywords: ["נדלן", "תכנון ובנייה", "היתרי בנייה", "ועדות תכנון", "AI", "בינה מלאכותית", "תקנים", "תקנות בנייה", "ישראל"],
 };
 
 export const viewport: Viewport = {
@@ -34,7 +34,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="he" dir="rtl" className="dark">
       <body
         className={`${inter.variable} ${firaCode.variable} font-sans antialiased bg-background text-foreground`}
       >
