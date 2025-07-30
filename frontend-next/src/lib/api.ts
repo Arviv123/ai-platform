@@ -1,7 +1,7 @@
 'use client';
 
 // הגדרת Base URL עבור ה-API
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://ai-platform-backend.railway.app';
 
 // Check if we're in static/demo mode
 const isStaticMode = false; // Disable static mode to use real backend
