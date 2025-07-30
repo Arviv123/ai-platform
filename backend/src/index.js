@@ -1,10 +1,3 @@
-﻿function safeUse(path, route) {
-  if (!route || typeof route !== "function") {
-    console.warn(`Skipping route ${path} because require returned ${route}`);
-    return;
-  }
-  app.use(path, route);
-}
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -19,32 +12,35 @@ const { globalErrorHandler, notFound } = require('./middleware/globalErrorHandle
 const { connectDB } = require('./config/database');
 const websocketService = require('./services/websocketService');
 const { specs, swaggerUi, swaggerOptions } = require('./config/swagger');
-// const monitoringService = require('./services/monitoringService');
-// const { requestMonitoring, errorMonitoring } = require('./middleware/monitoring');
 const securityService = require('./services/securityService');
 
-// Import routes
-const authRoutes = require('./routes/auth');
-const chatRoutes = require('./routes/chat');
-const mcpRoutes = require('./routes/mcp');
-const userRoutes = require('./routes/user');
-const billingRoutes = require('./routes/billing');
-const monitoringRoutes = require('./routes/monitoring');
-const securityRoutes = require('./routes/security');
-const gatewayRoutes = require('./routes/gateway');
-const organizationRoutes = require('./routes/organizations');
-const aiRoutes = require('./routes/ai');
-const a2aRoutes = require('./routes/a2a');
+// Import routes with safe loading
+function safeRequire(path) {
+  try {
+    return require(path);
+  } catch (error) {
+    logger.warn(`Failed to load route ${path}:`, error.message);
+    return null;
+  }
+}
+
+const authRoutes = safeRequire('./routes/auth');
+const chatRoutes = safeRequire('./routes/chat');
+const mcpRoutes = safeRequire('./routes/mcp');
+const userRoutes = safeRequire('./routes/user');
+const billingRoutes = safeRequire('./routes/billing');
+const monitoringRoutes = safeRequire('./routes/monitoring');
+const securityRoutes = safeRequire('./routes/security');
+const gatewayRoutes = safeRequire('./routes/gateway');
+const organizationRoutes = safeRequire('./routes/organizations');
+const aiRoutes = safeRequire('./routes/ai');
+const a2aRoutes = safeRequire('./routes/a2a');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Trust proxy for accurate client IPs
 app.set('trust proxy', 1);
-
-// Security middleware
-app.use(securityService.ipBlockingMiddleware());
-// app.use(requestMonitoring);
 
 // Security middleware
 app.use(helmet({
@@ -134,28 +130,77 @@ app.use((req, res, next) => {
 });
 
 // Health check endpoint
-app.get('/health', (req, res) => {
-  res.status(200).json({
-    status: 'OK',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-    environment: process.env.NODE_ENV,
-    version: process.env.npm_package_version || '1.0.0'
-  });
+app.get('/health', async (req, res) => {
+  try {
+    // בדיקת חיבור למסד נתונים
+    let dbStatus = 'unknown';
+    try {
+      const { checkDBHealth } = require('./config/database');
+      const dbHealth = await checkDBHealth();
+      dbStatus = dbHealth.status;
+    } catch (error) {
+      dbStatus = 'error';
+    }
+
+    const healthData = {
+      status: 'OK',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      environment: process.env.NODE_ENV || 'development',
+      version: process.env.npm_package_version || '1.0.0',
+      database: dbStatus,
+      cors: {
+        allowedOrigins: allowedOrigins.length,
+        origins: allowedOrigins
+      }
+    };
+
+    // הוספת CORS headers במפורש
+    res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    
+    res.status(200).json(healthData);
+  } catch (error) {
+    logger.error('Health check failed:', error);
+    res.status(500).json({
+      status: 'ERROR',
+      timestamp: new Date().toISOString(),
+      error: error.message
+    });
+  }
 });
 
+// CORS preflight endpoint
+app.options('*', (req, res) => {
+  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-MFA-Token');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.sendStatus(200);
+});
+
+// Safe route mounting
+function safeUse(path, route) {
+  if (!route || typeof route !== "function") {
+    console.warn(`Skipping route ${path} because route is ${route}`);
+    return;
+  }
+  app.use(path, route);
+}
+
 // API routes
-app.use('/api/auth', authRoutes);
-app.use('/api/chat', chatRoutes);
-app.use('/api/mcp', mcpRoutes);
-app.use('/api/user', userRoutes);
-app.use('/api/billing', billingRoutes);
-app.use('/api/monitoring', monitoringRoutes);
-app.use('/api/security', securityRoutes);
-app.use('/api/gateway', gatewayRoutes);
-app.use('/api/organizations', organizationRoutes);
-app.use('/api/ai', aiRoutes);
-app.use('/api/a2a', a2aRoutes);
+safeUse('/api/auth', authRoutes);
+safeUse('/api/chat', chatRoutes);
+safeUse('/api/mcp', mcpRoutes);
+safeUse('/api/user', userRoutes);
+safeUse('/api/billing', billingRoutes);
+safeUse('/api/monitoring', monitoringRoutes);
+safeUse('/api/security', securityRoutes);
+safeUse('/api/gateway', gatewayRoutes);
+safeUse('/api/organizations', organizationRoutes);
+safeUse('/api/ai', aiRoutes);
+safeUse('/api/a2a', a2aRoutes);
 
 // API documentation with Swagger
 app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(specs, swaggerOptions));
@@ -181,6 +226,7 @@ app.use('*', notFound);
 
 // Global error handling middleware (must be last)
 app.use(globalErrorHandler);
+
 // Graceful shutdown handler
 const gracefulShutdown = (signal) => {
   logger.info(`Received ${signal}. Shutting down gracefully...`);
@@ -224,9 +270,9 @@ const startServer = async () => {
     logger.info('Database connected successfully');
 
     // Initialize AI Service
-    const AIService = require('./services/ai/AIService');
-    const aiService = new AIService();
     try {
+      const AIService = require('./services/ai/AIService');
+      const aiService = new AIService();
       await aiService.initialize();
       logger.info('AI Service initialized successfully');
     } catch (error) {
@@ -234,14 +280,19 @@ const startServer = async () => {
     }
 
     // Start HTTP server
-    const server = app.listen(PORT, () => {
-      logger.info(`נ€ Server running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
-      logger.info(`נ“ API documentation available at http://localhost:${PORT}/api`);
-      logger.info(`נ¥ Health check available at http://localhost:${PORT}/health`);
+    const server = app.listen(PORT, '0.0.0.0', () => {
+      logger.info(`🚀 Server running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
+      logger.info(`📚 API documentation available at http://localhost:${PORT}/api`);
+      logger.info(`🏥 Health check available at http://localhost:${PORT}/health`);
+      logger.info(`🌐 Server listening on all interfaces (0.0.0.0:${PORT})`);
     });
 
     // Initialize WebSocket service
-    websocketService.initialize(server);
+    try {
+      websocketService.initialize(server);
+    } catch (error) {
+      logger.warn('WebSocket service initialization failed:', error.message);
+    }
 
     // Export server for graceful shutdown
     global.server = server;
@@ -255,4 +306,3 @@ const startServer = async () => {
 startServer();
 
 module.exports = app;
-

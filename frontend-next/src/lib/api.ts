@@ -3,6 +3,11 @@
 // הגדרת Base URL עבור ה-API - קבוע לפרודקשן
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://ai-platform-backend.onrender.com';
 
+// בדיקה שה-URL תקין
+if (typeof window !== 'undefined' && !API_BASE_URL.startsWith('http')) {
+  console.error('Invalid API_BASE_URL:', API_BASE_URL);
+}
+
 // Check if we're in static/demo mode
 const isStaticMode = false; // Disable static mode to use real backend
 
