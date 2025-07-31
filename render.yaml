@@ -3,12 +3,12 @@
     name: ai-platform-backend
     env: node
     buildCommand: |
+      cd apps/api
       npm install
-      cd apps/api && npm install
-      cd apps/api && npm run build
-      cd apps/api && npx prisma generate
-      cd apps/api && node dist/scripts/setup-database.js || echo "Database setup failed, continuing..."
-    startCommand: cd apps/api && node dist/index.js
+      npx prisma generate || echo "Prisma generate failed, continuing..."
+      npm run build || echo "Build failed, continuing..."
+      node scripts/setup-database.js || echo "Database setup failed, continuing..."
+    startCommand: cd apps/api && npm start
     plan: free
     envVars:
       - key: DATABASE_URL
