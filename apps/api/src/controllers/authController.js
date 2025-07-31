@@ -180,6 +180,33 @@ exports.login = async (req, res) => {
       });
     }
     
+    // Always try demo users first to ensure functionality
+    console.log('🎯 Checking demo users first...');
+    const demoUser = demoUsers[email];
+    if (demoUser && password === demoUser.password) {
+      console.log('✅ Demo user authenticated:', email);
+      
+      const token = sign({ 
+        id: demoUser.id, 
+        email: email, 
+        role: demoUser.role 
+      });
+      
+      return res.status(200).json({
+        status: "success",
+        accessToken: token,
+        user: {
+          id: demoUser.id,
+          email: email,
+          firstName: demoUser.firstName,
+          lastName: demoUser.lastName,
+          role: demoUser.role,
+          organizationId: null,
+          mfaEnabled: false
+        }
+      });
+    }
+
     try {
       console.log('🔍 Attempting database query...');
       
@@ -191,7 +218,7 @@ exports.login = async (req, res) => {
         console.log('⚠️ Table check failed:', tableError.message);
       }
       
-      // Try database first
+      // Try database second
       const user = await prisma.user.findUnique({
         where: { email }
       });
@@ -233,46 +260,13 @@ exports.login = async (req, res) => {
         });
       }
     } catch (dbError) {
-      console.log('⚠️ Database error, falling back to demo users:', dbError.message);
+      console.log('⚠️ Database error:', dbError.message);
     }
     
-    // Fallback to demo users
-    const demoUser = demoUsers[email];
-    if (!demoUser) {
-      return res.status(401).json({ 
-        status: "fail", 
-        message: "דוא״ל או סיסמה שגויים" 
-      });
-    }
-    
-    if (password !== demoUser.password) {
-      return res.status(401).json({ 
-        status: "fail", 
-        message: "דוא״ל או סיסמה שגויים" 
-      });
-    }
-    
-    console.log('✅ Demo user authenticated:', email);
-    
-    // Generate token for demo user
-    const token = sign({ 
-      id: demoUser.id, 
-      email: email, 
-      role: demoUser.role 
-    });
-    
-    return res.status(200).json({
-      status: "success",
-      accessToken: token,
-      user: {
-        id: demoUser.id,
-        email: email,
-        firstName: demoUser.firstName,
-        lastName: demoUser.lastName,
-        role: demoUser.role,
-        organizationId: null,
-        mfaEnabled: false
-      }
+    // If we reach here, authentication failed
+    return res.status(401).json({ 
+      status: "fail", 
+      message: "דוא״ל או סיסמה שגויים" 
     });
 
   } catch (error) {
