@@ -39,10 +39,10 @@
 
 # Context-specific builds
 [context.production]
-  command = "npm run build"
+  command = "npm install && npm run build:web"
 
 [context.deploy-preview]
-  command = "npm run build"
+  command = "npm install && npm run build:web"
 
 [context.branch-deploy]
-  command = "npm run build"
+  command = "npm install && npm run build:web"
