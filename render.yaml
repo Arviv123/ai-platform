@@ -2,11 +2,8 @@
   - type: web
     name: ai-platform-backend
     env: node
-    buildCommand: |
-      cd apps/api
-      npm install
-      npx prisma generate || true
-    startCommand: cd apps/api && npm start
+    buildCommand: cd apps/api && npm install && npx prisma generate
+    startCommand: cd apps/api && node src/index.js
     plan: free
     envVars:
       - key: DATABASE_URL
