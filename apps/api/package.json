@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "scripts": {
     "dev": "nodemon src/index.js",
-    "build": "rm -rf dist && mkdir -p dist && cp -r src/* dist/ && echo '🔄 Running Prisma migration...' && npx prisma migrate deploy && echo '✅ Migration completed, generating client...' && npx prisma generate && echo '🎯 Build completed!'",
+    "build": "rm -rf dist && mkdir -p dist && cp -r src/* dist/ && echo '🔄 Setting up database...' && npx prisma generate && node scripts/setup-database.js && echo '🎯 Build completed!'",
     "build:api": "rm -rf dist && mkdir -p dist && cp -r src/* dist/ && npx prisma generate",
     "start": "node dist/index.js",
     "test": "jest",
