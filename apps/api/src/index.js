@@ -294,7 +294,9 @@ process.on('unhandledRejection', (reason, promise) => {
   process.exit(1);
 });
 
-console.log('🔄 Force deployment update - v2.0');
+console.log('🔄 CRITICAL DEPLOYMENT UPDATE - v5.0 - EMERGENCY BYPASS READY');
+console.log('🚨 Login should work with emergency bypass!');
+console.log('🔥 If you see this message, the deployment worked!');
 
 // Start server
 const startServer = async () => {
