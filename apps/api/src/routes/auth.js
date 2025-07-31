@@ -30,15 +30,30 @@ router.post('/login',
   body('email').isEmail().normalizeEmail(),
   body('password').notEmpty(),
   async (req, res) => {
+    console.log('🎯 Login route handler hit!');
+    console.log('📨 Request body:', req.body);
+    
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.log('❌ Validation errors:', errors.array());
       return res.status(400).json({
         status: 'fail',
         message: 'נתונים לא תקינים',
         errors: errors.array()
       });
     }
-    await authController.login(req, res);
+    
+    console.log('✅ Validation passed, calling authController.login');
+    try {
+      await authController.login(req, res);
+      console.log('✅ authController.login completed');
+    } catch (error) {
+      console.error('❌ Route handler error:', error);
+      res.status(500).json({
+        status: 'error',
+        message: 'שגיאה בטיפול בבקשה'
+      });
+    }
   }
 );
 
