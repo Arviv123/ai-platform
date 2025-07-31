@@ -9,13 +9,15 @@ if (typeof window !== 'undefined' && !API_BASE_URL.startsWith('http')) {
 }
 
 // Dynamic mode detection - try backend first, fallback to local if needed
-let isStaticMode = false;
-let backendAvailable = null;
+let isStaticMode = true; // Force static mode temporarily
+let backendAvailable = false;
 
 // Debug info
 if (typeof window !== 'undefined') {
+  console.log('🏗️ נדל"ן AI Platform - מצב מקצועי');
   console.log('API Base URL:', API_BASE_URL);
   console.log('Static Mode:', isStaticMode);
+  console.log('Backend Available:', backendAvailable);
 }
 
 // Types עבור API responses
