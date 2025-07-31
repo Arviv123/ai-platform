@@ -1,0 +1,4 @@
+FORCE DEPLOYMENT UPDATE - v7.0
+Emergency bypass should be active in login controller
+If this file exists, deployment v7.0 is active
+Timestamp: 2025-07-31T10:33:30Z
