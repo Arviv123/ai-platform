@@ -396,3 +396,21 @@ exports.refresh = async (req, res) => {
     });
   }
 };
+
+// Logout
+exports.logout = async (req, res) => {
+  try {
+    // In a JWT-based system, logout is typically handled client-side
+    // by removing the token from storage
+    return res.status(200).json({
+      status: "success",
+      message: "התנתקת בהצלחה"
+    });
+  } catch (error) {
+    logger.error("Logout error:", error);
+    return res.status(500).json({ 
+      status: "error", 
+      message: "שגיאה פנימית בשרת" 
+    });
+  }
+};
