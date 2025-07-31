@@ -204,6 +204,24 @@ exports.login = async (req, res) => {
   console.log('🔧 PrismaClient available:', !!prisma);
   console.log('🔧 bcrypt available:', !!bcrypt);
   console.log('🔧 jwt available:', !!jwt);
+  
+  // Test basic JWT functionality
+  try {
+    const testToken = jwt.sign({ test: 'data' }, 'test-secret');
+    console.log('✅ JWT test successful');
+  } catch (jwtError) {
+    console.error('❌ JWT test failed:', jwtError.message);
+  }
+  
+  // Test sign function  
+  try {
+    console.log('🔧 Testing sign function...');
+    const testResult = sign({ id: 'test', email: 'test@test.com', role: 'USER' });
+    console.log('✅ Sign function test successful');
+  } catch (signError) {
+    console.error('❌ Sign function test failed:', signError.message);
+  }
+  
   try {
     const { email, password } = req.body || {};
     
