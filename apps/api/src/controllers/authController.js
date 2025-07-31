@@ -177,6 +177,15 @@ exports.login = async (req, res) => {
     
     try {
       console.log('🔍 Attempting database query...');
+      
+      // Debug: Check if tables exist
+      try {
+        const tableCheck = await prisma.$queryRaw`SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'users'`;
+        console.log('📊 Table check result:', tableCheck);
+      } catch (tableError) {
+        console.log('⚠️ Table check failed:', tableError.message);
+      }
+      
       // Try database first
       const user = await prisma.user.findUnique({
         where: { email }
