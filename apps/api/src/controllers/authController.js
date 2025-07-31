@@ -51,36 +51,53 @@ const demoUsers = {
     id: 'admin-1',
     firstName: 'מנהל', 
     lastName: 'נדל"ן AI', 
-    role: 'ADMIN',
-    password: 'Admin2024!'
+    role: 'SUPER_ADMIN',
+    password: 'Admin2024!',
+    permissions: ['ALL_PERMISSIONS'],
+    organizationId: 'main-org',
+    isOwner: true
+  },
+  'owner@nedlan-platform.co.il': { 
+    id: 'owner-1',
+    firstName: 'בעל', 
+    lastName: 'הפלטפורמה', 
+    role: 'PLATFORM_OWNER',
+    password: 'Owner2024!@#',
+    permissions: ['FULL_SYSTEM_ACCESS', 'USER_MANAGEMENT', 'BILLING_MANAGEMENT', 'SYSTEM_SETTINGS', 'API_MANAGEMENT', 'ANALYTICS_ACCESS'],
+    organizationId: 'platform-owner',
+    isOwner: true
   },
   'architect@nedlan-ai.co.il': { 
     id: 'user-1',
     firstName: 'אדריכל', 
     lastName: 'מקצועי', 
     role: 'USER',
-    password: 'Architect2024!'
+    password: 'Architect2024!',
+    permissions: ['BASIC_ACCESS']
   },
   'planner@nedlan-ai.co.il': { 
     id: 'user-2',
     firstName: 'מתכנן', 
     lastName: 'עירוני', 
     role: 'USER',
-    password: 'Planner2024!'
+    password: 'Planner2024!',
+    permissions: ['BASIC_ACCESS']
   },
   'contractor@nedlan-ai.co.il': { 
     id: 'user-3',
     firstName: 'קבלן', 
     lastName: 'בנייה', 
     role: 'USER',
-    password: 'Builder2024!'
+    password: 'Builder2024!',
+    permissions: ['BASIC_ACCESS']
   },
   'investor@nedlan-ai.co.il': { 
     id: 'user-4',
-    firstName: 'משקיע', 
+    firstName: 'משקיع', 
     lastName: 'נדלן', 
     role: 'USER',
-    password: 'Investor2024!'
+    password: 'Investor2024!',
+    permissions: ['BASIC_ACCESS']
   }
 };
 
@@ -315,3 +332,6 @@ exports.logout = async (req, res) => {
     });
   }
 };
+
+// Export demo users for admin access
+module.exports.demoUsers = demoUsers;

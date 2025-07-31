@@ -25,6 +25,7 @@ function safeRequire(path) {
 }
 
 const authRoutes = safeRequire('./routes/auth');
+const adminRoutes = safeRequire('./routes/admin');
 const chatRoutes = safeRequire('./routes/chat');
 const mcpRoutes = safeRequire('./routes/mcp');
 const userRoutes = safeRequire('./routes/user');
@@ -211,6 +212,7 @@ function safeUse(path, route) {
 
 // API routes
 safeUse('/api/auth', authRoutes);
+safeUse('/api/admin', adminRoutes);
 safeUse('/api/chat', chatRoutes);
 safeUse('/api/mcp', mcpRoutes);
 safeUse('/api/user', userRoutes);
