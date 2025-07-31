@@ -155,10 +155,14 @@ app.get('/health', async (req, res) => {
       }
     };
 
-    // הוספת CORS headers במפורש
-    res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    // הוספת CORS headers במפורט - ולידציה לפי allowedOrigins
+    const origin = req.headers.origin;
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      res.header('Access-Control-Allow-Origin', origin || '*');
+    }
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-MFA-Token');
+    res.header('Access-Control-Allow-Credentials', 'true');
     
     res.status(200).json(healthData);
   } catch (error) {
@@ -171,9 +175,12 @@ app.get('/health', async (req, res) => {
   }
 });
 
-// CORS preflight endpoint
+// CORS preflight endpoint - מחליף לפני הroutes
 app.options('*', (req, res) => {
-  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+  const origin = req.headers.origin;
+  if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+    res.header('Access-Control-Allow-Origin', origin || '*');
+  }
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-MFA-Token');
   res.header('Access-Control-Allow-Credentials', 'true');
@@ -219,6 +226,18 @@ app.get('/api', (req, res) => {
     },
     documentation: '/api/docs'
   });
+});
+
+// Global CORS fallback middleware - לכל response
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+    res.header('Access-Control-Allow-Origin', origin || '*');
+  }
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-MFA-Token');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  next();
 });
 
 // 404 handler
