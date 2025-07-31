@@ -1,9 +1,46 @@
+console.log('🔧 Loading authController dependencies...');
+
+try {
+  const jwt = require("jsonwebtoken");
+  console.log('✅ JWT loaded successfully');
+} catch (e) {
+  console.error('❌ JWT loading failed:', e.message);
+}
+
+try {
+  const bcrypt = require("bcryptjs");
+  console.log('✅ bcryptjs loaded successfully');
+} catch (e) {
+  console.error('❌ bcryptjs loading failed:', e.message);
+}
+
+try {
+  const { PrismaClient } = require("@prisma/client");
+  console.log('✅ PrismaClient loaded successfully');
+} catch (e) {
+  console.error('❌ PrismaClient loading failed:', e.message);
+}
+
+try {
+  const logger = require("../utils/logger");
+  console.log('✅ Logger loaded successfully');
+} catch (e) {
+  console.error('❌ Logger loading failed:', e.message);
+}
+
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const { PrismaClient } = require("@prisma/client");
 const logger = require("../utils/logger");
 
-const prisma = new PrismaClient();
+let prisma;
+try {
+  prisma = new PrismaClient();
+  console.log('✅ PrismaClient instance created successfully');
+} catch (e) {
+  console.error('❌ PrismaClient instance creation failed:', e.message);
+  prisma = null;
+}
 
 const sign = (payload) =>
   jwt.sign(payload, process.env.JWT_SECRET || "your-super-secret-jwt-key-change-in-production", { expiresIn: "7d" });
