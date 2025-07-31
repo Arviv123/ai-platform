@@ -294,6 +294,8 @@ process.on('unhandledRejection', (reason, promise) => {
   process.exit(1);
 });
 
+console.log('🔄 Force deployment update - v2.0');
+
 // Start server
 const startServer = async () => {
   try {
