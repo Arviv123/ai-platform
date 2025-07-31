@@ -186,6 +186,17 @@ const sendErrorProd = (err, req, res) => {
 
 // Main error handling middleware
 const globalErrorHandler = (err, req, res, next) => {
+  console.log('🚨 GLOBAL ERROR HANDLER HIT!');
+  console.log('🚨 Error details:', {
+    name: err.name,
+    message: err.message,
+    statusCode: err.statusCode,
+    status: err.status,
+    type: err.type,
+    url: req.originalUrl,
+    method: req.method
+  });
+  
   err.statusCode = err.statusCode || 500;
   err.status = err.status || 'error';
   err.type = err.type || 'general';
