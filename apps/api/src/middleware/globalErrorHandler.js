@@ -121,11 +121,14 @@ const sendErrorDev = (err, req, res) => {
     });
   }
 
-  // Rendered website error
+  // Non-API error - return JSON anyway (no template engine)
   console.error('ERROR 💥', err);
-  return res.status(err.statusCode).render('error', {
-    title: 'Something went wrong!',
-    msg: err.message
+  return res.status(err.statusCode).json({
+    status: err.status,
+    type: err.type,
+    message: err.message,
+    stack: err.stack,
+    timestamp: err.timestamp
   });
 };
 
@@ -161,19 +164,23 @@ const sendErrorProd = (err, req, res) => {
     });
   }
 
-  // Rendered website error
+  // Non-API error - return JSON anyway (no template engine)
   if (err.isOperational) {
-    return res.status(err.statusCode).render('error', {
-      title: 'Something went wrong!',
-      msg: err.message
+    return res.status(err.statusCode).json({
+      status: err.status,
+      type: err.type,
+      message: err.message,
+      timestamp: err.timestamp
     });
   }
 
   // Programming or other unknown error: don't leak error details
   logger.logError(err);
-  return res.status(err.statusCode).render('error', {
-    title: 'Something went wrong!',
-    msg: 'Please try again later.'
+  return res.status(500).json({
+    status: 'error',
+    type: 'general',
+    message: 'Please try again later.',
+    timestamp: new Date().toISOString()
   });
 };
 
