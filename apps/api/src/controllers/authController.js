@@ -161,10 +161,12 @@ exports.register = async (req, res) => {
 
 // User login
 exports.login = async (req, res) => {
+  console.log('🚀 Login endpoint hit!');
   try {
     const { email, password } = req.body || {};
     
     console.log('🔐 Login attempt:', { email, hasPassword: !!password });
+    console.log('📥 Full request body:', req.body);
     
     if (!email || !password) {
       return res.status(400).json({ 
@@ -174,13 +176,14 @@ exports.login = async (req, res) => {
     }
     
     try {
+      console.log('🔍 Attempting database query...');
       // Try database first
       const user = await prisma.user.findUnique({
         where: { email }
       });
       
       if (user) {
-        console.log('✅ User found in database');
+        console.log('✅ User found in database:', user.id);
         const validPassword = await bcrypt.compare(password, user.password);
         if (!validPassword) {
           return res.status(401).json({ 
