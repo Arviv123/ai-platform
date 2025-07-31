@@ -27,7 +27,7 @@ router.post('/register',
 
 // Login endpoint
 router.post('/login',
-  body('email').isEmail().normalizeEmail(),
+  body('email').isEmail(),  // Removed normalizeEmail() for testing
   body('password').notEmpty(),
   async (req, res) => {
     console.log('🎯 Login route handler hit!');
