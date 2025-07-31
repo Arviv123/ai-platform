@@ -28,7 +28,7 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://ai-platform-backend.onrender.com';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://nedlan-ai-api.onrender.com';
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);

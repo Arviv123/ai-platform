@@ -11,7 +11,7 @@ export default function HomePage() {
 
   const checkHealth = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://ai-platform-backend.onrender.com'}/health`);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://nedlan-ai-api.onrender.com'}/health`);
       if (response.ok) {
         setHealthStatus('healthy');
       } else {

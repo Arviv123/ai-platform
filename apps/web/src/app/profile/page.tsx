@@ -77,7 +77,7 @@ export default function ProfilePage() {
       const token = localStorage.getItem('auth_token');
       if (!token) return;
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://ai-platform-backend.railway.app'}/api/user/profile`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://nedlan-ai-api.onrender.com'}/api/user/profile`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -100,7 +100,7 @@ export default function ProfilePage() {
       const token = localStorage.getItem('auth_token');
       if (!token) return;
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://ai-platform-backend.railway.app'}/api/user/profile`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://nedlan-ai-api.onrender.com'}/api/user/profile`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -132,7 +132,7 @@ export default function ProfilePage() {
       const token = localStorage.getItem('auth_token');
       if (!token) return;
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://ai-platform-backend.railway.app'}/api/user/api-keys`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://nedlan-ai-api.onrender.com'}/api/user/api-keys`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -163,7 +163,7 @@ export default function ProfilePage() {
       const token = localStorage.getItem('auth_token');
       if (!token) return;
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://ai-platform-backend.railway.app'}/api/user/api-keys/${keyId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://nedlan-ai-api.onrender.com'}/api/user/api-keys/${keyId}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       });

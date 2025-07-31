@@ -63,7 +63,7 @@ export default function OrganizationsPage() {
       const token = localStorage.getItem('auth_token');
       if (!token) return;
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://ai-platform-backend.railway.app'}/api/organizations`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://nedlan-ai-api.onrender.com'}/api/organizations`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -87,7 +87,7 @@ export default function OrganizationsPage() {
       const token = localStorage.getItem('auth_token');
       if (!token) return;
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://ai-platform-backend.railway.app'}/api/organizations`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://nedlan-ai-api.onrender.com'}/api/organizations`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -115,7 +115,7 @@ export default function OrganizationsPage() {
       const token = localStorage.getItem('auth_token');
       if (!token) return;
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://ai-platform-backend.railway.app'}/api/organizations/${orgId}/status`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://nedlan-ai-api.onrender.com'}/api/organizations/${orgId}/status`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',

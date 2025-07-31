@@ -71,7 +71,7 @@ export default function MonitoringPage() {
       if (!token) return;
 
       // Load system metrics
-      const metricsResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://ai-platform-backend.railway.app'}/api/monitoring/metrics`, {
+      const metricsResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://nedlan-ai-api.onrender.com'}/api/monitoring/metrics`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -81,7 +81,7 @@ export default function MonitoringPage() {
       }
 
       // Load service health
-      const healthResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://ai-platform-backend.railway.app'}/api/gateway/health`, {
+      const healthResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://nedlan-ai-api.onrender.com'}/api/gateway/health`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -91,7 +91,7 @@ export default function MonitoringPage() {
       }
 
       // Load request metrics
-      const requestsResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://ai-platform-backend.railway.app'}/api/monitoring/requests`, {
+      const requestsResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://nedlan-ai-api.onrender.com'}/api/monitoring/requests`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       

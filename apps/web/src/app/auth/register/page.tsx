@@ -71,13 +71,13 @@ export default function RegisterPage() {
   const handleGoogleSignup = () => {
     showToast('יועבר להרשמה עם Google...', 'info');
     // In production, this would redirect to Google OAuth
-    window.location.href = `${process.env.NEXT_PUBLIC_API_URL || 'https://ai-platform-backend.railway.app'}/api/auth/google?register=true`;
+    window.location.href = `${process.env.NEXT_PUBLIC_API_URL || 'https://nedlan-ai-api.onrender.com'}/api/auth/google?register=true`;
   };
 
   const handleFacebookSignup = () => {
     showToast('יועבר להרשמה עם Facebook...', 'info');
     // In production, this would redirect to Facebook OAuth
-    window.location.href = `${process.env.NEXT_PUBLIC_API_URL || 'https://ai-platform-backend.railway.app'}/api/auth/facebook?register=true`;
+    window.location.href = `${process.env.NEXT_PUBLIC_API_URL || 'https://nedlan-ai-api.onrender.com'}/api/auth/facebook?register=true`;
   };
 
   if (isLoading) {
