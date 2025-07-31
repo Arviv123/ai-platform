@@ -68,6 +68,26 @@ router.get('/facebook', (req, res) => {
   });
 });
 
+// Debug endpoint
+router.get("/debug", (req, res) => {
+  try {
+    const authController = require('../controllers/authController');
+    res.json({ 
+      status: "ok", 
+      route: "auth",
+      debug: "controller loaded",
+      methods: Object.keys(authController),
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: "error",
+      message: error.message,
+      stack: error.stack
+    });
+  }
+});
+
 // Health check
 router.get("/", (req, res) => {
   res.json({ status: "ok", route: "auth" });
