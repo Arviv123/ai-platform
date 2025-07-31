@@ -1,12 +1,12 @@
-{
+﻿{
   "name": "ai-platform-backend",
   "version": "1.0.0",
   "description": "Backend API server for AI Platform",
   "main": "dist/index.js",
   "scripts": {
     "dev": "node src/index.js",
-    "start": "node server.js",
-    "build": "babel src -d dist --copy-files",
+    "start": "node dist/index.js",
+    "build": "rm -rf dist && mkdir dist && cp -r src/* dist/ && npx prisma generate",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
@@ -90,3 +90,4 @@
   "author": "Your Name",
   "license": "UNLICENSED"
 }
+
