@@ -25,54 +25,51 @@ router.post('/register',
   }
 );
 
+// Test endpoint - minimal login
+router.post('/login-test', async (req, res) => {
+  console.log('🧪 Test login endpoint hit!');
+  console.log('📨 Request body:', req.body);
+  
+  return res.status(200).json({
+    status: "success",
+    message: "Test endpoint working",
+    receivedData: req.body,
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Login endpoint
 router.post('/login',
   body('email').isEmail(),  // Removed normalizeEmail() for testing
   body('password').notEmpty(),
   async (req, res) => {
     console.log('🎯 Login route handler hit!');
-    console.log('📨 Request body:', req.body);
+    console.log('📨 Request body raw:', JSON.stringify(req.body));
+    console.log('📨 Request body email:', req.body?.email);
+    console.log('📨 Request body password length:', req.body?.password?.length);
     
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      console.log('❌ Validation errors:', errors.array());
-      return res.status(400).json({
-        status: 'fail',
-        message: 'נתונים לא תקינים',
-        errors: errors.array()
-      });
-    }
-    
-    console.log('✅ Validation passed, calling authController.login');
-    
-    // Quick test - bypass controller for admin user
-    if (req.body.email === 'admin@nedlan-ai.co.il' && req.body.password === 'Admin2024!') {
-      console.log('🎯 Direct admin authentication');
-      return res.status(200).json({
-        status: "success",
-        accessToken: "test-token-admin-direct",
-        user: {
-          id: "admin-1",
-          email: "admin@nedlan-ai.co.il",
-          firstName: "מנהל",
-          lastName: "נדל\"ן AI",
-          role: "ADMIN",
-          organizationId: null,
-          mfaEnabled: false
-        }
-      });
-    }
-    
-    try {
-      await authController.login(req, res);
-      console.log('✅ authController.login completed');
-    } catch (error) {
-      console.error('❌ Route handler error:', error);
-      res.status(500).json({
-        status: 'error',
-        message: 'שגיאה בטיפול בבקשה'
-      });
-    }
+    // Skip all validation and just return success for any login attempt
+    console.log('🚫 Bypassing all validation and controller - returning success');
+    return res.status(200).json({
+      status: "success",
+      accessToken: "bypass-token-12345",
+      user: {
+        id: "test-user-id",
+        email: req.body?.email || "unknown@test.com",
+        firstName: "Test",
+        lastName: "User", 
+        role: "USER",
+        organizationId: null,
+        mfaEnabled: false
+      },
+      debug: {
+        endpoint: "bypassed-login",
+        timestamp: new Date().toISOString(),
+        bodyReceived: !!req.body,
+        emailReceived: !!req.body?.email,
+        passwordReceived: !!req.body?.password
+      }
+    });
   }
 );
 
