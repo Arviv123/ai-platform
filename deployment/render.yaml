@@ -5,7 +5,7 @@ services:
     runtime: node
     plan: free
     rootDir: apps/api
-    buildCommand: npm install && npm run build && npx prisma generate
+    buildCommand: cd ../../ && npm install && npm run build:api && cd apps/api && npx prisma generate
     startCommand: npm start
     healthCheckPath: /health
     autoDeploy: true
@@ -42,6 +42,12 @@ services:
         value: "true"
       - key: METRICS_PORT
         value: "9090"
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: GOOGLE_AI_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
 
 databases:
   # PostgreSQL Database
