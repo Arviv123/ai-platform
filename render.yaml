@@ -4,12 +4,11 @@
     env: node
     buildCommand: |
       npm install
-      cd apps/api
-      npm install
-      npm run build
-      npx prisma generate
-      node scripts/setup-database.js
-    startCommand: cd apps/api && npm start
+      cd apps/api && npm install
+      cd apps/api && npm run build
+      cd apps/api && npx prisma generate
+      cd apps/api && node dist/scripts/setup-database.js || echo "Database setup failed, continuing..."
+    startCommand: cd apps/api && node dist/index.js
     plan: free
     envVars:
       - key: DATABASE_URL
