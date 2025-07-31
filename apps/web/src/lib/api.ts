@@ -1,7 +1,7 @@
 'use client';
 
 // הגדרת Base URL עבור ה-API - קבוע לפרודקשן
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://ai-platform-backend.onrender.com';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://nedlan-ai-api.onrender.com';
 
 // בדיקה שה-URL תקין
 if (typeof window !== 'undefined' && !API_BASE_URL.startsWith('http')) {

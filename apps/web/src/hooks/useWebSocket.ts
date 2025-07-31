@@ -52,7 +52,7 @@ export function useWebSocket(options: WebSocketOptions = {}) {
     if (!token) return null;
     
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host = 'ai-platform-backend.railway.app';
+    const host = 'nedlan-ai-api.onrender.com';
     return `${protocol}//${host}/ws?token=${encodeURIComponent(token)}`;
   }, []);
 

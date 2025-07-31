@@ -173,7 +173,7 @@ export default function ConnectionTest() {
         <h4 className="text-white font-medium mb-3">Connection Details</h4>
         <div className="space-y-2 text-sm">
           <div className="text-gray-300">
-            <strong>API Base URL:</strong> {process.env.NEXT_PUBLIC_API_URL || 'https://ai-platform-backend.railway.app'}
+            <strong>API Base URL:</strong> {process.env.NEXT_PUBLIC_API_URL || 'https://nedlan-ai-api.onrender.com'}
           </div>
           <div className="text-gray-300">
             <strong>Environment:</strong> {process.env.NODE_ENV || 'development'}

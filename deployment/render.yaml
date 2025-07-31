@@ -1,10 +1,10 @@
 services:
   # Backend API Service
   - type: web
-    name: ai-platform-backend
+    name: nedlan-ai-api
     runtime: node
     plan: free
-    rootDir: backend
+    rootDir: apps/api
     buildCommand: npm install && npm run build && npx prisma generate
     startCommand: npm start
     healthCheckPath: /health
@@ -15,7 +15,7 @@ services:
       - key: PORT
         value: 10000
       - key: CORS_ORIGIN
-        value: https://super-genie-7460e3.netlify.app
+        value: https://nedlan-ai.netlify.app
       - key: DATABASE_URL
         fromDatabase:
           name: ai-platform-db
