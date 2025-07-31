@@ -1,9 +1,13 @@
+console.log('🔄 AUTH ROUTES LOADING - v6.0');
+
 const express = require("express");
 const { body, validationResult } = require('express-validator');
 const authController = require('../controllers/authController');
 const { authenticate } = require('../middleware/auth');
 
 const router = express.Router();
+
+console.log('✅ AUTH ROUTES LOADED - v6.0');
 
 // Registration endpoint
 router.post('/register',
