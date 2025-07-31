@@ -62,15 +62,28 @@ const allowedOrigins = [
   process.env.CORS_ORIGIN
 ].filter(Boolean);
 
+// Debug CORS
+console.log('🌐 CORS Configuration:');
+console.log('Allowed Origins:', allowedOrigins);
+console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('CORS_ORIGIN env:', process.env.CORS_ORIGIN);
+
 app.use(cors({
   origin: function (origin, callback) {
+    console.log('🔍 CORS Origin Check:', { origin, allowedOrigins });
+    
     // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
+    if (!origin) {
+      console.log('✅ CORS: Allowing request with no origin');
+      return callback(null, true);
+    }
     
     if (allowedOrigins.indexOf(origin) !== -1) {
+      console.log('✅ CORS: Origin allowed:', origin);
       callback(null, true);
     } else {
-      console.log('CORS blocked origin:', origin);
+      console.log('❌ CORS: Origin blocked:', origin);
+      console.log('❌ CORS: Expected one of:', allowedOrigins);
       callback(new Error('Not allowed by CORS'));
     }
   },

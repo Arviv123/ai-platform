@@ -7,7 +7,7 @@
 [build.environment]
   NODE_VERSION = "20"
   NEXT_TELEMETRY_DISABLED = "1"
-  NEXT_PUBLIC_API_URL = "https://nedlan-ai-api.onrender.com"
+  NEXT_PUBLIC_API_URL = "https://ai-platform-backend-mow5.onrender.com"
   NEXT_PUBLIC_APP_NAME = "נדל\"ן AI Platform"
 
 # SPA routing
