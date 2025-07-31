@@ -162,6 +162,11 @@ exports.register = async (req, res) => {
 // User login
 exports.login = async (req, res) => {
   console.log('🚀 Login endpoint hit!');
+  console.log('🔧 Node version:', process.version);
+  console.log('🔧 Environment:', process.env.NODE_ENV || 'not set');
+  console.log('🔧 PrismaClient available:', !!prisma);
+  console.log('🔧 bcrypt available:', !!bcrypt);
+  console.log('🔧 jwt available:', !!jwt);
   try {
     const { email, password } = req.body || {};
     
@@ -271,10 +276,15 @@ exports.login = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("Login error:", error);
+    console.error("💥 Login error:", error);
+    console.error("💥 Error details:", {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
     return res.status(500).json({ 
       status: "error", 
-      message: "שגיאה פנימית בשרת" 
+      message: "שגיאה בהתחברות"
     });
   }
 };
