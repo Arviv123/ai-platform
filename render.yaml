@@ -5,8 +5,7 @@
     buildCommand: |
       cd apps/api
       npm install
-      npx prisma generate || echo "Prisma generate failed, continuing..."
-      node scripts/setup-database.js || echo "Database setup failed, continuing..."
+      npx prisma generate || true
     startCommand: cd apps/api && npm start
     plan: free
     envVars:
