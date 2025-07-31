@@ -1,4 +1,4 @@
-﻿{
+{
   "name": "api",
   "version": "1.0.0",
   "description": "Backend API server for AI Platform",
@@ -91,5 +91,3 @@
   "author": "Your Name",
   "license": "UNLICENSED"
 }
-
-
