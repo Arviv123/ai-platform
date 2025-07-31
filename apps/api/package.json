@@ -5,7 +5,8 @@
   "main": "dist/index.js",
   "scripts": {
     "dev": "nodemon src/index.js",
-    "build": "rm -rf dist && mkdir -p dist && cp -r src/* dist/ && echo '🔄 Force rebuild v4.0' && npx prisma generate && node scripts/setup-database.js && echo '🎯 Build completed v4.0!'",
+    "build": "rm -rf dist && mkdir -p dist && cp -r src/* dist/ && echo 'Build completed successfully'",
+    "build:windows": "rmdir /s /q dist 2>nul & mkdir dist & xcopy /e /i src dist & echo Build completed successfully",
     "build:api": "rm -rf dist && mkdir -p dist && cp -r src/* dist/ && npx prisma generate",
     "start": "node dist/index.js",
     "test": "jest",

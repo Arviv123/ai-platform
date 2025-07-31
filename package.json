@@ -12,7 +12,7 @@
     "build": "turbo build",
     "build:web": "turbo build --filter=web",
     "build:api": "turbo build --filter=api",
-    "start": "turbo start",
+    "start": "cd apps/api && npm start",
     "test": "turbo test",
     "lint": "turbo lint",
     "type-check": "turbo type-check",
@@ -23,8 +23,10 @@
     "db:seed": "cd apps/api && npx prisma db seed",
     "db:studio": "cd apps/api && npx prisma studio"
   },
+  "dependencies": {
+    "turbo": "^1.10.16"
+  },
   "devDependencies": {
-    "turbo": "^1.10.16",
     "@turbo/gen": "^1.10.16",
     "typescript": "^5.2.2",
     "@types/node": "^20.8.0"

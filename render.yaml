@@ -4,9 +4,12 @@
     env: node
     buildCommand: |
       npm install
-      npx prisma generate --schema apps/api/prisma/schema.prisma
-      npx prisma migrate deploy --schema apps/api/prisma/schema.prisma
-    startCommand: node dist/index.js
+      cd apps/api
+      npm install
+      npm run build
+      npx prisma generate
+      node scripts/setup-database.js
+    startCommand: cd apps/api && npm start
     plan: free
     envVars:
       - key: DATABASE_URL
